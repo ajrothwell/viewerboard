@@ -1,0 +1,39 @@
+{
+  "name": "viewerboard",
+  "description": "A Vue.js component for data-rich web mapping",
+  "version": "0.0.1",
+  "author": "City of Philadelphia <maps@phila.gov>",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "dev-build": "vue-cli-service build --mode development"
+  },
+  "dependencies": {
+    "@fortawesome/vue-fontawesome": "^0.1.9",
+    "@philly/vue-datafetch": "^1.0.0",
+    "@philly/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#db0e9b705dacac47ea5e4bc95c7ac7d5d347c43c",
+    "core-js": "^3.6.1",
+    "vue": "2.6.10",
+    "vue-router": "^3.0.6",
+    "vuex": "^3.1.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.1.2",
+    "@vue/cli-service": "^4.1.2",
+    "babel-runtime": "^6.26.0",
+    "node-sass": "^4.13.0",
+    "sass": "^1.24.2",
+    "sass-loader": "^7.1.0",
+    "vue-template-compiler": "2.6.10"
+  },
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8"
+  ]
+}
