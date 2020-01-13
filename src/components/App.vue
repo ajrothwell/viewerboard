@@ -240,7 +240,7 @@ export default {
     window.addEventListener('resize', this.handleWindowResize);
   },
   mounted() {
-    console.log('app mounted, this.$config:', this.$config, 'this.$route:', this.$route);
+    console.log('app mounted, this.$config:', this.$config);
     this.handleWindowResize();
     if (this.$route.query.address) {
       this.$controller.handleSearchFormSubmit(this.$route.query.address);
@@ -259,10 +259,14 @@ export default {
   },
   computed: {
     shouldLoadCyclomediaWidget() {
-      return false;
+      return this.$config.cyclomedia.enabled;
     },
     shouldLoadPictometryWidget() {
-      return true;
+      if (this.$config.cyclomedia.enabled) {
+        return false;
+      } else {
+        return this.$config.pictometry.enabled;
+      }
     },
     toggleScreenShareButtonMessage() {
       if (this.fullScreenImageryEnabled) {

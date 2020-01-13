@@ -1,5 +1,5 @@
 {
-  "name": "viewerboard",
+  "name": "@philly/viewerboard",
   "description": "A Vue.js component for data-rich web mapping",
   "version": "0.0.1",
   "author": "City of Philadelphia <maps@phila.gov>",
