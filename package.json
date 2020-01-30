@@ -1,5 +1,5 @@
 {
-  "name": "@philly/viewerboard",
+  "name": "@phila/viewerboard",
   "description": "A Vue.js component for data-rich web mapping",
   "version": "0.0.1",
   "author": "City of Philadelphia <maps@phila.gov>",
@@ -11,7 +11,7 @@
   "dependencies": {
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "@philly/vue-datafetch": "^1.0.0",
-    "@philly/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#db0e9b705dacac47ea5e4bc95c7ac7d5d347c43c",
+    "@philly/vue-mapping": "git+https://github.com/CityOfPhiladelphia/phila-vue-mapping.git#db0e9b705dacac47ea5e4bc95c7ac7d5d347c43c",
     "core-js": "^3.6.1",
     "vue": "2.6.10",
     "vue-router": "^3.0.6",
@@ -35,5 +35,18 @@
     "> 1%",
     "last 2 versions",
     "not ie <= 8"
-  ]
+  ],
+  "main": "src/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CityOfPhiladelphia/viewerboard.git"
+  },
+  "keywords": [
+    "map"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CityOfPhiladelphia/viewerboard/issues"
+  },
+  "homepage": "https://github.com/CityOfPhiladelphia/viewerboard#readme"
 }
