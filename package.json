@@ -3,6 +3,8 @@
   "description": "A Vue.js component for data-rich web mapping",
   "version": "0.0.1",
   "author": "City of Philadelphia <maps@phila.gov>",
+  "main": "src/main.js",
+  "license": "MIT",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -36,7 +38,6 @@
     "last 2 versions",
     "not ie <= 8"
   ],
-  "main": "src/main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CityOfPhiladelphia/viewerboard.git"
@@ -44,7 +45,6 @@
   "keywords": [
     "map"
   ],
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/CityOfPhiladelphia/viewerboard/issues"
   },
