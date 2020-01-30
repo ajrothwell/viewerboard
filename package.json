@@ -5,6 +5,7 @@
   "author": "City of Philadelphia <maps@phila.gov>",
   "main": "src/main.js",
   "license": "MIT",
+  "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
