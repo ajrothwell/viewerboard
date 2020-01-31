@@ -2,11 +2,9 @@
 
 _(work in progress)_
 
-viewerboard provides a pluggable Vue.js component for data-rich mapping applications.
+viewerboard provides a pluggable Vue.js component for mapping applications.
 
-## Example
-
-See [Simple Example](examples/simple.index.html) for an intended usage of the API.
+![Cyclomedia](https://mapboard-images.s3.amazonaws.com/viewerboard/cyclo.JPG)
 
 ## Build Setup
 

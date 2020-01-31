@@ -35,7 +35,7 @@
 export default {
   components: {
     // ModalAbout,
-    // PopoverLink: () => import(/* webpackChunkName: "lblb_pvc_PopoverLink" */'@philly/vue-comps/src/components/PopoverLink.vue'),
+    // PopoverLink: () => import(/* webpackChunkName: "lblb_pvc_PopoverLink" */'@phila/vue-comps/src/components/PopoverLink.vue'),
   },
   props: {
     feedbackLink: {

@@ -7,10 +7,10 @@ import mergeDeep from './util/merge-deep';
 import * as faAll from './fa.js';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-import controllerMixin from '@philly/vue-datafetch/src/controller.js';
+import controllerMixin from '@phila/vue-datafetch/src/controller.js';
 
 // import eventBusMixin from './util/event-bus-mixin';
-// import CyclomediaWidget from '@philly/vue-mapping/src/cyclomedia/Widget.vue';
+// import CyclomediaWidget from '@phila/vue-mapping/src/cyclomedia/Widget.vue';
 import router from './router';
 import App from './components/App.vue';
 
