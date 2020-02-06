@@ -14,7 +14,7 @@
   "dependencies": {
     "@fortawesome/vue-fontawesome": "^0.1.9",
     "@phila/vue-datafetch": "^1.1.7",
-    "@phila/vue-mapping": "^2.0.5",
+    "@phila/vue-mapping": "^2.0.7",
     "core-js": "^3.6.1",
     "vue": "2.6.10",
     "vue-router": "^3.0.6",

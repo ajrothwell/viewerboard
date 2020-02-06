@@ -23,6 +23,7 @@
     >
 
       <address-input
+        v-if='this.$config.addressInput'
         class='address-input'
         :width-from-config="this.$config.addressInput.width"
         :placeholder="this.$config.addressInput.placeholder"
@@ -33,6 +34,14 @@
         id="map-panel"
         :class="mapPanelClass"
       >
+      <!-- :style="{ 'position': 'relative' }" -->
+
+        <!-- <full-screen-toggle-tab
+          :event="'toggle-tab-click'"
+          :deactivated-direction="'right'"
+          @toggle-tab-click="mapToggleClicked"
+        /> -->
+
         <map_
           id="map-tag"
           :center="this.$store.state.map.center"
@@ -43,8 +52,8 @@
           :max-zoom="this.$config.map.maxZoom"
           @l-moveend="handleMapMove"
         >
-        <!-- basemaps -->
 
+          <!-- basemaps -->
           <esri-tiled-map-layer
             v-for="(basemap, key) in this.$config.map.basemaps"
             v-if="activeBasemap === key"
@@ -62,6 +71,17 @@
             :url="tiledLayer.url"
             :z-index="tiledLayer.zIndex"
             :attribution="tiledLayer.attribution"
+          />
+
+          <!-- tiled overlay based on topic -->
+          <esri-tiled-map-layer
+            v-for="(tiledLayer, key) in this.$config.map.tiledLayers"
+            v-if="activeTiledOverlays.includes(key)"
+            :key="key"
+            :url="tiledLayer.url"
+            :z-index="tiledLayer.zIndex"
+            :opacity="tiledLayer.opacity"
+            :test="key"
           />
 
           <vector-marker
@@ -102,7 +122,7 @@
 
           <cyclomedia-recording-circle
             v-for="recording in cyclomediaRecordings"
-            v-if="cyclomediaActive"
+            v-if="!fullScreenMapEnabled"
             :key="recording.imageId"
             :image-id="recording.imageId"
             :latlng="[recording.lat, recording.lng]"
@@ -115,6 +135,7 @@
           <!-- marker using a png and ablility to rotate it -->
           <!-- v-if="cyclomediaActive" -->
           <png-marker
+            v-if="!fullScreenMapEnabled"
             :icon="sitePath + 'images/camera.png'"
             :latlng="cycloLatlng"
             :rotation-angle="cycloRotationAngle"
@@ -123,12 +144,42 @@
           <!-- marker using custom code extending icons - https://github.com/iatkin/leaflet-svgicon -->
           <!-- v-if="cyclomediaActive" -->
           <svg-view-cone-marker
+            v-if="!fullScreenMapEnabled"
             :latlng="cycloLatlng"
             :rotation-angle="cycloRotationAngle"
             :h-fov="cycloHFov"
           />
 
+          <div v-once>
+            <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
+                                     v-once
+                                     @half-marathon-button-clicked="this.halfMarathonButtonClicked"
+                                     @full-marathon-button-clicked="this.fullMarathonButtonClicked"
+                                     :position="'topright'"
+            />
+          </div>
+
+          <div v-once>
+            <basemap-toggle-control v-if="shouldShowBasemapToggleControl"
+                                    v-once
+                                    @basemap-toggle-clicked="handleBasemapToggleClick"
+                                    :position="'topright'"
+                                    :single-layer="'imagery2019'"
+            />
+          </div>
+
         </map_>
+
+        <full-screen-toggle-tab
+          :event="'toggle-tab-click'"
+          :initial-activation="mapToggleInitialActivation"
+          :deactivated-direction="'right'"
+          :button-side="'right'"
+          :position="'relative'"
+          @toggle-tab-click="mapToggleClicked"
+          panel="map"
+        />
+
       </div>
 
       <!-- slot="cycloWidget"
@@ -138,14 +189,17 @@
         id="image-panel"
         :class="imagePanelClass"
       >
+      <!-- :style="{ 'position': 'relative' }" -->
         <cyclomedia-widget
           v-if="shouldLoadCyclomediaWidget"
           @cyclomedia-widget-mounted="initializeCyclomedia"
         >
           <full-screen-toggle-tab
             :event="'toggle-tab-click'"
-            :deactivated-direction="'right'"
-            @toggle-tab-click="toggleScreenShare"
+            :initial-activation="imageryToggleInitialActivation"
+            :deactivated-direction="'left'"
+            @toggle-tab-click="imageToggleClicked"
+            panel="imagery"
           />
 
         </cyclomedia-widget>
@@ -158,8 +212,10 @@
         >
           <full-screen-toggle-tab
             :event="'toggle-tab-click'"
+            :initial-activation="imageryToggleInitialActivation"
             :deactivated-direction="'right'"
-            @toggle-tab-click="toggleScreenShare"
+            @toggle-tab-click="imageToggleClicked"
+            panel="imagery"
           />
         </pictometry-widget>
       </div>
@@ -182,13 +238,15 @@
 
 <script>
 import PhilaHeader from './PhilaHeader.vue';
-import PhilaFooter from './PhilaFooter.vue';
+// import PhilaFooter from './PhilaFooter.vue';
+import MarathonToggleControl from './MarathonToggleControl.vue';
 
 import Map_ from '@phila/vue-mapping/src/leaflet/Map.vue';
 import FullScreenToggleTab from '@phila/vue-mapping/src/components/FullScreenToggleTab.vue';
 import FullScreenMapToggleTab from '@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue';
 import ControlCorner from '@phila/vue-mapping/src/leaflet/ControlCorner.vue';
 import LocationControl from '@phila/vue-mapping/src/components/LocationControl.vue';
+import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
 import CyclomediaRecordingsClient from '@phila/vue-mapping/src/cyclomedia/recordings-client.js';
 
@@ -198,12 +256,14 @@ export default {
 
   components: {
     PhilaHeader,
-    PhilaFooter,
+    // PhilaFooter,
+    MarathonToggleControl,
     Map_,
     FullScreenToggleTab,
     FullScreenMapToggleTab,
     ControlCorner,
     LocationControl,
+    BasemapToggleControl,
     AddressInput: () => import(/* webpackChunkName: "mbmp_pvc_AddressInput" */'@phila/vue-mapping/src/components/MapAddressInput.vue'),
     CyclomediaWidget: () => import(/* webpackChunkName: "mbmb_pvm_CyclomediaWidget" */'@phila/vue-mapping/src/cyclomedia/Widget.vue'),
     PictometryWidget: () => import(/* webpackChunkName: "mbmb_pvm_PictometryWidget" */'@phila/vue-mapping/src/pictometry/Widget.vue'),
@@ -219,6 +279,11 @@ export default {
       mbRootStyle: {
         'height': '100px',
       },
+      mapToggleInitialActivation: null,
+      imageryToggleInitialActivation: null,
+      activeBasemap: 'pwd',
+      tiledLayers: ['cityBasemapLabels'],
+      activeTiledOverlays: [],
     };
     return data;
   },
@@ -240,7 +305,16 @@ export default {
     window.addEventListener('resize', this.handleWindowResize);
   },
   mounted() {
-    // console.log('viewerboard app mounted, this.$route:', this.$route, 'this.$config:', this.$config);
+    if (this.$config.initialTiledOverlays) {
+      this.activeTiledOverlays = this.$config.initialTiledOverlays;
+    }
+    if (this.$config.map.center) {
+      this.$store.commit('setMapCenter', this.$config.map.center);
+    }
+    if (this.$config.map.zoom && this.$store.state.map.map) {
+      this.$store.commit('setMapZoom', this.$config.map.zoom);
+    }
+    console.log('viewerboard app mounted, this.$config:', this.$config, 'this.$config.initialView.length:', this.$config.initialView.length);
     this.handleWindowResize();
     if (this.$route.query.address) {
       this.$controller.handleSearchFormSubmit(this.$route.query.address);
@@ -251,6 +325,21 @@ export default {
 
     this.$store.commit('setPictometryMapCenter', this.$config.map.center);
     // this.handleMapMove();
+
+    if (this.$config.initialView) {
+      if (this.$config.initialView.length > 1) {
+        this.$store.commit('setFullScreenImageryEnabled', false);
+        this.$store.commit('setFullScreenMapEnabled', false);
+      } else if (this.$config.initialView.includes('map')) {
+        // this.$store.commit('setFullScreenImageryEnabled', false);
+        this.$store.commit('setFullScreenMapEnabled', true);
+        this.mapToggleInitialActivation = true;
+      } else if (this.$config.initialView.includes('imagery')) {
+        this.$store.commit('setFullScreenImageryEnabled', true);
+        this.imageryToggleInitialActivation = true;
+        // this.$store.commit('setFullScreenMapEnabled', true);
+      }
+    }
   },
   watch: {
     geocodeCoordinates(nextGeocodeCoordinates) {
@@ -259,6 +348,37 @@ export default {
     },
   },
   computed: {
+    basemaps() {
+      return Object.values(this.$config.map.basemaps);
+    },
+    imageryBasemaps() {
+      return this.basemaps.filter(basemap => basemap.type === 'imagery');
+    },
+    hasImageryBasemaps() {
+      return this.imageryBasemaps.length > 0;
+    },
+    shouldShowBasemapToggleControl() {
+      let value;
+      if (this.$config.map.basemapToggle) {
+        value = this.$config.map.basemapToggle;
+      } else {
+        value = false;
+      }
+      return value;
+      // if (this.$config.map.imagery) {
+      //   return this.hasImageryBasemaps && this.$config.map.imagery.enabled;
+      // }
+      // return this.hasImageryBasemaps;
+    },
+    shouldShowMarathonToggleControl() {
+      let value;
+      if (this.$config.map.marathonToggle) {
+        value = this.$config.map.marathonToggle;
+      } else {
+        value = false;
+      }
+      return value;
+    },
     shouldLoadCyclomediaWidget() {
       return this.$config.cyclomedia.enabled;
     },
@@ -285,21 +405,28 @@ export default {
     fullScreenImageryEnabled() {
       return this.$store.state.fullScreenImageryEnabled;
     },
+    fullScreenMapEnabled() {
+      return this.$store.state.fullScreenMapEnabled;
+    },
     mapPanelClass() {
       let value;
       if (this.$store.state.fullScreenImageryEnabled) {
-        value = 'small-0 medium-0'
+        value = 'small-0 medium-0 map-panel-class'
+      } else if (this.$store.state.fullScreenMapEnabled) {
+        value = 'small-24 medium-24 map-panel-class'
       } else {
-        value = 'small-24 medium-12'
+        value = 'small-24 medium-12 map-panel-class'
       }
       return value;
     },
     imagePanelClass() {
       let value;
       if (this.$store.state.fullScreenImageryEnabled) {
-        value = 'small-24 medium-24'
+        value = 'small-24 medium-24 image-panel-class'
+      } else if (this.$store.state.fullScreenMapEnabled) {
+        value = 'small-0 medium-0 image-panel-class'
       } else {
-        value = 'small-0 medium-12'
+        value = 'small-0 medium-12 image-panel-class'
       }
       return value;
     },
@@ -326,12 +453,6 @@ export default {
     },
     cycloHFov() {
       return this.$store.state.cyclomedia.orientation.hFov;
-    },
-    activeBasemap() {
-      return 'pwd';
-    },
-    tiledLayers() {
-      return [ 'cityBasemapLabels' ];
     },
     geolocationEnabled() {
       if (this.$config.geolocation) {
@@ -375,17 +496,62 @@ export default {
     },
   },
   methods: {
-    toggleScreenShare() {
-      console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
-      this.$store.commit('setfullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
+    halfMarathonButtonClicked() {
+      // console.log('halfMarathonButtonClicked is running');
+      this.activeTiledOverlays = ['halfMarathon'];
+    },
+    fullMarathonButtonClicked() {
+      // console.log('fullMarathonButtonClicked is running');
+      this.activeTiledOverlays = ['fullMarathon'];
+    },
+    handleBasemapToggleClick() {
+      console.log('handleBasemapToggleClick is running, this.activeBasemap:', this.activeBasemap);
+      if (this.activeBasemap === 'pwd') {
+        console.log('if is running');
+        this.activeBasemap = this.$store.state.map.imagery;
+        this.tiledLayers = ['imageryBasemapLabels']
+      } else if (this.activeBasemap === 'imagery2019') {
+        console.log('else if is running');
+        this.activeBasemap = this.$store.state.map.basemap;
+        this.tiledLayers = ['cityBasemapLabels']
+      }
+    },
+    mapToggleClicked() {
+      console.log('mapToggleClicked is running, this.$store', this.$store, 'this.$store.state.fullScreenMapEnabled', this.$store.state.fullScreenMapEnabled);
+      this.$store.commit('setFullScreenMapEnabled', !this.$store.state.fullScreenMapEnabled);
+      if (this.$store.state.cyclomedia.initializationBegun === false) {
+        this.initializeCyclomedia();
+      }
+    },
+    imageToggleClicked() {
+      console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setShouldInitializeMap', true);
       }
     },
+    toggleScreenShare() {
+      console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
+      if (this.$store.state.fullScreenImageryEnabled === false) {
+        this.$store.commit('setFullScreenImageryEnabled', true);
+        this.$store.commit('setFullScreenMapEnabled', false);
+      } else {
+        this.$store.commit('setShouldInitializeMap', true);
+        this.$store.commit('setFullScreenImageryEnabled', false);
+        this.$store.commit('setFullScreenMapEnabled', true);
+      }
+      if (this.$store.state.cyclomedia.initializationBegun === false) {
+        this.initializeCyclomedia();
+      }
+    },
     initializeCyclomedia() {
-      // console.log('app initializeCyclomedia is running');
-      this.$store.commit('setCyclomediaInitializationBegun', true);
-      this.$store.commit('setCyclomediaActive', true);
+      console.log('app initializeCyclomedia is running');
+      if (!this.$store.state.fullScreenMapEnabled) {
+        console.log('app initializeCyclomedia IF is running');
+        this.$store.commit('setCyclomediaInitializationBegun', true);
+        this.$store.commit('setCyclomediaActive', true);
+      }
     },
     initializePictometry() {
       console.log('initializePictometry is running');
@@ -463,6 +629,14 @@ export default {
 
 #app {
   height: 100%;
+}
+
+.map-panel-class {
+  position: relative;
+}
+
+.image-panel-class {
+  position: relative;
 }
 
 .toggle-map {
