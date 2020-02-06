@@ -19,8 +19,9 @@ function createStore(config) {
       cycloOnly: false,
     },
     fullScreenMapEnabled: false,
-    fullScreenImageryEnabled: true,
+    fullScreenImageryEnabled: false,
     map: {
+      basemap: 'pwd',
       zoom: 19,
     }
   };
@@ -41,9 +42,10 @@ function createStore(config) {
         state.fullScreen.CycloOnly = payload;
       },
       setFullScreenMapEnabled(state, payload) {
+        console.log('setFullScreenMapEnabled is running, payload:', payload);
         state.fullScreenMapEnabled = payload;
       },
-      setfullScreenImageryEnabled(state, payload) {
+      setFullScreenImageryEnabled(state, payload) {
         state.fullScreenImageryEnabled = payload;
       },
     }

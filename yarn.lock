@@ -815,10 +815,10 @@
     vue "^2.6.10"
     vuex "^3.1.2"
 
-"@phila/vue-mapping@^2.0.5":
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/@phila/vue-mapping/-/vue-mapping-2.0.5.tgz#c97f064bc6d5f95e555ca6ef60ec7c0c89b2cffd"
-  integrity sha512-tQjPAmsGmFbtsRw7GOiGWDL10BsiVXHDid+PvMVmNJUNZaA0fq6tb8lP0LJN8M90lxDYNRhDUDkPUNBIj2al8Q==
+"@phila/vue-mapping@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/@phila/vue-mapping/-/vue-mapping-2.0.7.tgz#06d1744e80816db3e74cb1c2d6eb118d2f658d5d"
+  integrity sha512-CL1/tUnZrmCQA+lMePaPWq1Na+WYnXdsK31me9Dw1HkJZvqE+xHsVbVkS4kiVJ3cYGzWgcmFbbmdjq5g5zhEsg==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^1.2.15"
     "@fortawesome/free-regular-svg-icons" "^5.7.2"
