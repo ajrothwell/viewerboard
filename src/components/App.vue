@@ -222,12 +222,13 @@
 
     </div>
 
-    <button
-      class="toggle-button"
-      @click="toggleScreenShare"
+    <PhilaButton
+      class="button toggle-map hide-for-medium"
+      @click.native="toggleScreenShare"
     >
       {{ toggleScreenShareButtonMessage }}
-    </button>
+    </PhilaButton>
+    <!-- class="toggle-button" -->
 
     <!-- <PhilaFooter
       v-show="isLarge"
@@ -238,6 +239,7 @@
 
 <script>
 import PhilaHeader from './PhilaHeader.vue';
+import PhilaButton from './PhilaButton.vue';
 // import PhilaFooter from './PhilaFooter.vue';
 import MarathonToggleControl from './MarathonToggleControl.vue';
 
@@ -256,6 +258,7 @@ export default {
 
   components: {
     PhilaHeader,
+    PhilaButton,
     // PhilaFooter,
     MarathonToggleControl,
     Map_,
