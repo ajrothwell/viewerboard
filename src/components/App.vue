@@ -43,6 +43,7 @@
         /> -->
 
         <map_
+          v-if="this.mapType === 'leaflet'"
           id="map-tag"
           :center="this.$store.state.map.center"
           :zoom="this.$store.state.map.zoom"
@@ -170,6 +171,61 @@
 
         </map_>
 
+        <MglMap
+          v-if="this.mapType === 'mapbox'"
+          :mapStyle.sync="this.$config.mbStyle"
+          :zoom="this.$config.map.zoom"
+          :center="this.$config.map.center"
+          @load="this.onMapLoaded"
+        >
+          <MglRasterLayer
+            v-for="(basemapSource, key) in this.basemapSources"
+            v-if="activeBasemap === key"
+            :sourceId="activeBasemap"
+            :layerId="activeBasemap"
+            :layer="basemapSource.layer"
+            :source="basemapSource.source"
+            :before="firstOverlay"
+          />
+
+          <MglRasterLayer
+            v-for="(basemapLabelSource, key) in this.basemapLabelSources"
+            v-if="tiledLayers.includes(key)"
+            :sourceId="key"
+            :layerId="key"
+            :layer="basemapLabelSource.layer"
+            :source="basemapLabelSource.source"
+            :before="firstOverlay"
+          />
+
+          <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
+                                   v-once
+                                   @half-marathon-button-clicked="this.halfMarathonButtonClicked"
+                                   @full-marathon-button-clicked="this.fullMarathonButtonClicked"
+                                   :position="'topright'"
+          />
+
+          <MglButtonControl
+            :buttonId="'buttonId-01'"
+            :buttonClass="'right'"
+            :imageLink="BasemapImageLink"
+            @click="this.handleBasemapToggleClick"
+          />
+
+          <MglNavigationControl position="bottom-left"/>
+          <MglGeolocateControl position="bottom-left"/>
+
+          <MglRasterLayer
+            v-for="(overlaySource, key) in this.overlaySources"
+            v-if="activeTiledOverlays.includes(key)"
+            :sourceId="key"
+            :layerId="key"
+            :layer="overlaySource.layer"
+            :source="overlaySource.source"
+          />
+
+        </MglMap>
+
         <full-screen-toggle-tab
           :event="'toggle-tab-click'"
           :initial-activation="mapToggleInitialActivation"
@@ -181,6 +237,12 @@
         />
 
       </div>
+
+      <!-- <div
+        class="map-overlay top"
+      >
+        test
+      </div> -->
 
       <!-- slot="cycloWidget"
       screen-percent="2" -->
@@ -238,6 +300,9 @@
 </template>
 
 <script>
+
+import 'mapbox-gl/dist/mapbox-gl.css';
+
 import PhilaHeader from './PhilaHeader.vue';
 import PhilaButton from './PhilaButton.vue';
 // import PhilaFooter from './PhilaFooter.vue';
@@ -249,6 +314,14 @@ import FullScreenMapToggleTab from '@phila/vue-mapping/src/components/FullScreen
 import ControlCorner from '@phila/vue-mapping/src/leaflet/ControlCorner.vue';
 import LocationControl from '@phila/vue-mapping/src/components/LocationControl.vue';
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
+
+import MglMap from '@phila/vue-mapping/src/mapbox/map/GlMap.vue';
+import MglNavigationControl from '@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl';
+import MglGeolocateControl from '@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl';
+import MglRasterLayer from '@phila/vue-mapping/src/mapbox/layer/RasterLayer';
+
+import MglButtonControl from '@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue';
+import MglControlContainer from '@phila/vue-mapping/src/mapbox/UI/controls/ControlContainer.vue';
 
 import CyclomediaRecordingsClient from '@phila/vue-mapping/src/cyclomedia/recordings-client.js';
 
@@ -275,6 +348,12 @@ export default {
     CyclomediaRecordingCircle: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaRecordingCircle" */'@phila/vue-mapping/src/cyclomedia/RecordingCircle.vue'),
     PngMarker: () => import(/* webpackChunkName: "mbmp_pvm_PngMarker" */'@phila/vue-mapping/src/components/PngMarker.vue'),
     SvgViewConeMarker: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaSvgViewConeMarker" */'@phila/vue-mapping/src/cyclomedia/SvgViewConeMarker.vue'),
+    MglMap,
+    MglNavigationControl,
+    MglGeolocateControl,
+    MglRasterLayer,
+    MglButtonControl,
+    MglControlContainer,
   },
   data() {
     const data = {
@@ -303,6 +382,9 @@ export default {
     if (this.$config.map) {
       if (this.$config.map.shouldInitialize === false) {
         this.$store.commit('setShouldInitializeMap', false);
+      }
+      if (this.$config.map.type) {
+        this.$store.commit('setMapType', this.$config.map.type);
       }
     }
     window.addEventListener('resize', this.handleWindowResize);
@@ -343,6 +425,14 @@ export default {
         // this.$store.commit('setFullScreenMapEnabled', true);
       }
     }
+
+    // if (this.mapType === 'mapbox') {
+    //   let map = this.$store.state.map.map;
+    //   console.log('App mounted, map:', map);
+    //   for (let source of Object.keys(this.$config.sources)) {
+    //     map.addSource(source, this.$config.sources.source);
+    //   }
+    // }
   },
   watch: {
     geocodeCoordinates(nextGeocodeCoordinates) {
@@ -351,6 +441,25 @@ export default {
     },
   },
   computed: {
+    BasemapImageLink() {
+      if (this.activeBasemap === 'pwd') {
+        return 'images/imagery_small.png';
+      } else {
+        return 'images/basemap_small.png';
+      }
+    },
+    basemapSources() {
+      return this.$config.basemapSources;
+    },
+    basemapLabelSources() {
+      return this.$config.basemapLabelSources;
+    },
+    overlaySources() {
+      return this.$config.overlaySources;
+    },
+    mapType() {
+      return this.$store.state.map.type;
+    },
     basemaps() {
       return Object.values(this.$config.map.basemaps);
     },
@@ -497,8 +606,34 @@ export default {
       }
       return markers;
     },
+    firstOverlay() {
+      let map = this.$store.state.map.map;
+      let overlaySources = Object.keys(this.$config.overlaySources);
+      let overlay;
+      if (map) {
+        let overlays = map.getStyle().layers.filter(function(layer) {
+          // console.log('layer.id:', layer.id, 'overlaySources:', overlaySources);
+          return overlaySources.includes(layer.id);//[0].id;
+        })
+        if (overlays.length) {
+          overlay = overlays[0].id
+        }
+      }
+      return overlay;
+    }
   },
   methods: {
+    onMapLoaded(map) {
+      this.$store.commit('setMap', map);
+
+      // for (let source of Object.keys(this.$config.sources)) {
+      //   console.log('source:', source);
+      //   map.map.addSource(source, this.$config.sources[source]);
+      // }
+    },
+    testMglButtonControlClick() {
+      console.log('App.vue testMglButtonControlClick is running');
+    },
     halfMarathonButtonClicked() {
       // console.log('halfMarathonButtonClicked is running');
       this.activeTiledOverlays = ['halfMarathon'];
@@ -629,6 +764,15 @@ export default {
 
 <style lang="scss">
 @import "@/scss/global.scss";
+
+.map-overlay {
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  position: absolute;
+  width: 200px;
+  top: 0;
+  left: 0;
+  padding: 10px;
+}
 
 #app {
   height: 100%;
