@@ -225,9 +225,12 @@
           />
 
           <MbIcon
+            v-if="!fullScreenMapEnabled"
             :url="'https://mapboard-images.s3.amazonaws.com/camera.png'"
             :name="'camera'"
           />
+          <!-- :latlng="cycloLatlng"
+          :rotation-angle="cycloRotationAngle" -->
 
           <!-- <MglImageLayer
             :sourceId="'cameraSource'"
