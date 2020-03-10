@@ -224,6 +224,18 @@
             :source="overlaySource.source"
           />
 
+          <MbIcon
+            :url="'https://mapboard-images.s3.amazonaws.com/camera.png'"
+            :name="'camera'"
+          />
+
+          <!-- <MglImageLayer
+            :sourceId="'cameraSource'"
+            :source="cameraSource"
+            layerId="'cameraLayer'"
+            :layer="cameraLayer"
+          /> -->
+
         </MglMap>
 
         <full-screen-toggle-tab
@@ -319,6 +331,8 @@ import MglMap from '@phila/vue-mapping/src/mapbox/map/GlMap.vue';
 import MglNavigationControl from '@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl';
 import MglGeolocateControl from '@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl';
 import MglRasterLayer from '@phila/vue-mapping/src/mapbox/layer/RasterLayer';
+import MglImageLayer from '@phila/vue-mapping/src/mapbox/layer/ImageLayer';
+import MbIcon from '@phila/vue-mapping/src/mapbox/MbIcon';
 
 import MglButtonControl from '@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue';
 import MglControlContainer from '@phila/vue-mapping/src/mapbox/UI/controls/ControlContainer.vue';
@@ -354,6 +368,8 @@ export default {
     MglRasterLayer,
     MglButtonControl,
     MglControlContainer,
+    MglImageLayer,
+    MbIcon,
   },
   data() {
     const data = {
@@ -366,6 +382,36 @@ export default {
       activeBasemap: 'pwd',
       tiledLayers: ['cityBasemapLabels'],
       activeTiledOverlays: [],
+      cameraSource: {
+        // 'id': 'cameraSource',
+        'type': 'image',
+        'url': 'https://mapboard-images.s3.amazonaws.com/camera.png',
+        'coordinates': [[-75.163471, 39.953338]],
+        // 'data': {
+        //   'type': 'FeatureCollection',
+        //   'features': [
+        //     {
+        //       'type': 'Feature',
+        //       'geometry': {
+        //         'type': 'Point',
+        //       }
+        //     }
+        //   ]
+        // },
+        // 'image': {
+        // 'coordinates': [-75.163471, 39.953338],
+        // 'url': 'https://mapboard-images.s3.amazonaws.com/camera.png',
+        // }
+      },
+      cameraLayer: {
+        'id': 'cameraLayer',
+        'type': 'symbol',
+        'source': 'cameraSource',
+        'layout': {
+          'icon-image': 'markers',
+          'icon-size': 0.25
+        }
+      }
     };
     return data;
   },
