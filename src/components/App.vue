@@ -177,7 +177,18 @@
           :zoom="this.$config.map.zoom"
           :center="this.$config.map.center"
           @load="this.onMapLoaded"
+          @click="this.vectorClicked"
         >
+
+          <MglVectorLayer
+            :source="this.$config.vectorTiles"
+            :sourceId="'PVL_Original'"
+            :layer="this.$config.vectorTiles"
+            :layerId="'PVL_Original'"
+          />
+          <!-- :sourceId="'Street_Centerline_PVL'" -->
+          <!-- @click="this.vectorClicked" -->
+
           <MglRasterLayer
             v-for="(basemapSource, key) in this.basemapSources"
             v-if="activeBasemap === key"
@@ -214,6 +225,8 @@
 
           <MglNavigationControl position="bottom-left"/>
           <MglGeolocateControl position="bottom-left"/>
+
+
 
           <MglRasterLayer
             v-for="(overlaySource, key) in this.overlaySources"
@@ -335,6 +348,7 @@ import MglNavigationControl from '@phila/vue-mapping/src/mapbox/UI/controls/Navi
 import MglGeolocateControl from '@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl';
 import MglRasterLayer from '@phila/vue-mapping/src/mapbox/layer/RasterLayer';
 import MglImageLayer from '@phila/vue-mapping/src/mapbox/layer/ImageLayer';
+import MglVectorLayer from '@phila/vue-mapping/src/mapbox/layer/VectorLayer';
 import MbIcon from '@phila/vue-mapping/src/mapbox/MbIcon';
 
 import MglButtonControl from '@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue';
@@ -372,6 +386,7 @@ export default {
     MglButtonControl,
     MglControlContainer,
     MglImageLayer,
+    MglVectorLayer,
     MbIcon,
   },
   data() {
@@ -679,6 +694,21 @@ export default {
       //   console.log('source:', source);
       //   map.map.addSource(source, this.$config.sources[source]);
       // }
+    },
+    vectorClicked(e) {
+      console.log('vectorClicked is running, e:', e, 'e.mapboxEvent.point:', e.mapboxEvent.point);
+      let map = this.$store.state.map.map;
+      var bbox = [
+        [e.mapboxEvent.point.x - 5, e.mapboxEvent.point.y - 5],
+        [e.mapboxEvent.point.x + 5, e.mapboxEvent.point.y + 5]
+        // [e.point.x - 5, e.point.y - 5],
+        // [e.point.x + 5, e.point.y + 5]
+      ];
+      var features = map.queryRenderedFeatures(bbox, {
+        layers: ['PVL_Original']
+      });
+
+      console.log('vectorClicked, features:', features);
     },
     testMglButtonControlClick() {
       console.log('App.vue testMglButtonControlClick is running');
