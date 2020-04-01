@@ -180,7 +180,19 @@
           @click="this.vectorClicked"
         >
 
+          <!-- <MglMarker
+            :coordinates="[-75.175125, 39.961231]"
+            color="red"
+          /> -->
+
+          <MglIcon
+            :coordinates="[-75.175125, 39.961231]"
+            :background-image="'https://mapboard-images.s3.amazonaws.com/camera.png'"
+            color="red"
+          />
+
           <MglVectorLayer
+            v-if="this.$config.vectorTiles"
             :source="this.$config.vectorTiles"
             :sourceId="'PVL_Original'"
             :layer="this.$config.vectorTiles"
@@ -241,9 +253,9 @@
             v-if="!fullScreenMapEnabled"
             :url="'https://mapboard-images.s3.amazonaws.com/camera.png'"
             :name="'camera'"
+            :rotation-angle="cycloRotationAngle"
           />
-          <!-- :latlng="cycloLatlng"
-          :rotation-angle="cycloRotationAngle" -->
+          <!-- :latlng="cycloLatlng"-->
 
           <!-- <MglImageLayer
             :sourceId="'cameraSource'"
@@ -344,6 +356,8 @@ import LocationControl from '@phila/vue-mapping/src/components/LocationControl.v
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
 import MglMap from '@phila/vue-mapping/src/mapbox/map/GlMap.vue';
+import MglMarker from '@phila/vue-mapping/src/mapbox/UI/Marker.vue';
+import MglIcon from '@phila/vue-mapping/src/mapbox/UI/Icon.vue';
 import MglNavigationControl from '@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl';
 import MglGeolocateControl from '@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl';
 import MglRasterLayer from '@phila/vue-mapping/src/mapbox/layer/RasterLayer';
@@ -380,6 +394,8 @@ export default {
     PngMarker: () => import(/* webpackChunkName: "mbmp_pvm_PngMarker" */'@phila/vue-mapping/src/components/PngMarker.vue'),
     SvgViewConeMarker: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaSvgViewConeMarker" */'@phila/vue-mapping/src/cyclomedia/SvgViewConeMarker.vue'),
     MglMap,
+    MglMarker,
+    MglIcon,
     MglNavigationControl,
     MglGeolocateControl,
     MglRasterLayer,
