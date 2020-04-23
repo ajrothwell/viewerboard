@@ -99,14 +99,14 @@
             :h-side="'left'"
           /> -->
 
-          <!-- <div v-once>
+          <div v-once>
             <location-control
               v-if="geolocationEnabled"
               v-once
               :position="'bottomleft'"
               :title="'Locate me'"
             />
-          </div> -->
+          </div>
 
           <!-- location marker -->
           <circle-marker
@@ -179,12 +179,6 @@
           @load="this.onMapLoaded"
           @move="this.handleMapMove"
         >
-        <!-- @click="this.vectorClicked" -->
-
-          <!-- <MglMarker
-            :coordinates="[recording.lng, recording.lat]"
-            color="red"
-          /> -->
 
           <MglCircleMarker
             v-for="recording in cyclomediaRecordings"
@@ -197,10 +191,6 @@
             :weight="1"
             @click="handleCyclomediaRecordingClick"
           />
-          <!-- @click="" -->
-
-
-          <!-- :background-image="'https://mapboard-images.s3.amazonaws.com/camera.png'" -->
 
           <!-- <MbIcon
             v-if="!fullScreenMapEnabled"
@@ -215,6 +205,7 @@
             :source="geojsonCameraSource"
             :layerId="'cameraPoints'"
             :layer="geojsonCameraLayer"
+            :icon="sitePath + 'images/camera.png'"
           />
 
           <MglGeojsonLayer
@@ -225,46 +216,13 @@
             :layer="geojsonViewconeLayer"
           />
 
-          <!-- <MglGeojsonLayer
-            v-for="recording in cyclomediaRecordings"
-            v-if="!fullScreenMapEnabled"
-            :sourceId="'source_circle_500'"
-            :source="geojsonCircleSource"
-            :layerId="recording.imageId"
-            :layer="{
-              'id': recording.imageId,
-              'type': 'circle',
-              'source': 'source_circle_500',
-              'layout': {},
-              //   "visibility": "none"
-              // },
-              'paint': {
-                'circle-radius': 10,
-                'circle-color': '#5b94c6',
-                'circle-opacity': 0.6
-              }
-            }
-            "
-          /> -->
-          <!-- :coordinates="[recording.lng, recording.lat]" -->
-
-          <!-- <MglImageLayer
-            :sourceId="'cameraSource'"
-            :source="cameraSource"
-            layerId="'cameraLayer'"
-            :layer="cameraLayer"
-          /> -->
-
-
-          <MglVectorLayer
+          <!-- <MglVectorLayer
             v-if="this.$config.vectorTiles"
             :source="this.$config.vectorTiles"
             :sourceId="'PVL_Original'"
             :layer="this.$config.vectorTiles"
             :layerId="'PVL_Original'"
-          />
-          <!-- :sourceId="'Street_Centerline_PVL'" -->
-          <!-- @click="this.vectorClicked" -->
+          /> -->
 
           <MglRasterLayer
             v-for="(basemapSource, key) in this.basemapSources"
@@ -286,6 +244,16 @@
             :before="firstOverlay"
           />
 
+          <MglRasterLayer
+            v-for="(overlaySource, key) in this.overlaySources"
+            v-if="activeTiledOverlays.includes(key)"
+            :sourceId="key"
+            :layerId="key"
+            :layer="overlaySource.layer"
+            :source="overlaySource.source"
+            :before="cameraOverlay"
+          />
+
           <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
                                    v-once
                                    @half-marathon-button-clicked="this.halfMarathonButtonClicked"
@@ -303,15 +271,6 @@
           <MglNavigationControl position="bottom-left"/>
           <MglGeolocateControl position="bottom-left"/>
 
-          <MglRasterLayer
-            v-for="(overlaySource, key) in this.overlaySources"
-            v-if="activeTiledOverlays.includes(key)"
-            :sourceId="key"
-            :layerId="key"
-            :layer="overlaySource.layer"
-            :source="overlaySource.source"
-          />
-
         </MglMap>
 
         <full-screen-toggle-tab
@@ -326,20 +285,10 @@
 
       </div>
 
-      <!-- <div
-        class="map-overlay top"
-      >
-        test
-      </div> -->
-
-      <!-- slot="cycloWidget"
-      screen-percent="2" -->
-      <!-- :orientation="this.$config.cyclomedia.orientation" -->
       <div
         id="image-panel"
         :class="imagePanelClass"
       >
-      <!-- :style="{ 'position': 'relative' }" -->
         <cyclomedia-widget
           v-if="shouldLoadCyclomediaWidget"
           @cyclomedia-widget-mounted="initializeCyclomedia"
@@ -378,66 +327,41 @@
     >
       {{ toggleScreenShareButtonMessage }}
     </PhilaButton>
-    <!-- class="toggle-button" -->
 
-    <!-- <PhilaFooter
-      v-show="isLarge"
-      @howToUseLink="toggleModal()"
-    /> -->
   </div>
 </template>
 
 <script>
 
 import 'mapbox-gl/dist/mapbox-gl.css';
-
 import destination from '@turf/destination';
-import along from '@turf/along';
 
 import PhilaHeader from './PhilaHeader.vue';
 import PhilaButton from './PhilaButton.vue';
 // import PhilaFooter from './PhilaFooter.vue';
-import MarathonToggleControl from './MarathonToggleControl.vue';
 
-import Map_ from '@phila/vue-mapping/src/leaflet/Map.vue';
-import FullScreenToggleTab from '@phila/vue-mapping/src/components/FullScreenToggleTab.vue';
-import FullScreenMapToggleTab from '@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue';
-import ControlCorner from '@phila/vue-mapping/src/leaflet/ControlCorner.vue';
+import MarathonToggleControl from './MarathonToggleControl.vue';
 import LocationControl from '@phila/vue-mapping/src/components/LocationControl.vue';
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
-import MglMap from '@phila/vue-mapping/src/mapbox/map/GlMap.vue';
-import MglMarker from '@phila/vue-mapping/src/mapbox/UI/Marker.vue';
-import MglIcon from '@phila/vue-mapping/src/mapbox/UI/Icon.vue';
-import MglCircleMarker from '@phila/vue-mapping/src/mapbox/UI/CircleMarker.vue';
-import MglNavigationControl from '@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl';
-import MglGeolocateControl from '@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl';
-import MglRasterLayer from '@phila/vue-mapping/src/mapbox/layer/RasterLayer';
-import MglImageLayer from '@phila/vue-mapping/src/mapbox/layer/ImageLayer';
-import MglVectorLayer from '@phila/vue-mapping/src/mapbox/layer/VectorLayer';
-import MbIcon from '@phila/vue-mapping/src/mapbox/UI/MbIcon';
-import MglGeojsonLayer from '@phila/vue-mapping/src/mapbox/layer/GeojsonLayer';
-
-import MglButtonControl from '@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue';
-import MglControlContainer from '@phila/vue-mapping/src/mapbox/UI/controls/ControlContainer.vue';
-
 import CyclomediaRecordingsClient from '@phila/vue-mapping/src/cyclomedia/recordings-client.js';
-
 import cyclomediaMixin from '@phila/vue-mapping/src/cyclomedia/map-panel-mixin.js';
 
 export default {
-
+  name: 'Viewerboard',
   components: {
     PhilaHeader,
     PhilaButton,
     // PhilaFooter,
     MarathonToggleControl,
-    Map_,
-    FullScreenToggleTab,
-    FullScreenMapToggleTab,
-    ControlCorner,
+    Map_: () => import(/* webpackChunkName: "pvm_Map" */'@phila/vue-mapping/src/leaflet/Map.vue'),
+    FullScreenToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenToggleTab" */'@phila/vue-mapping/src/components/FullScreenToggleTab.vue'),
+    FullScreenMapToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenMapToggleTab" */'@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue'),
+    ControlCorner: () => import(/* webpackChunkName: "pvm_ControlCorner" */'@phila/vue-mapping/src/leaflet/ControlCorner.vue'),
     LocationControl,
+    // LocationControl: () => import(/* webpackChunkName: "pvm_LocationControl" */'@phila/vue-mapping/src/components/LocationControl.vue'),
     BasemapToggleControl,
+    // BasemapToggleControl: () => import(/* webpackChunkName: "pvm_BasemapToggleControl" */'@phila/vue-mapping/src/components/BasemapToggleControl.vue'),
     AddressInput: () => import(/* webpackChunkName: "mbmp_pvc_AddressInput" */'@phila/vue-mapping/src/components/MapAddressInput.vue'),
     CyclomediaWidget: () => import(/* webpackChunkName: "mbmb_pvm_CyclomediaWidget" */'@phila/vue-mapping/src/cyclomedia/Widget.vue'),
     PictometryWidget: () => import(/* webpackChunkName: "mbmb_pvm_PictometryWidget" */'@phila/vue-mapping/src/pictometry/Widget.vue'),
@@ -446,19 +370,19 @@ export default {
     CyclomediaRecordingCircle: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaRecordingCircle" */'@phila/vue-mapping/src/cyclomedia/RecordingCircle.vue'),
     PngMarker: () => import(/* webpackChunkName: "mbmp_pvm_PngMarker" */'@phila/vue-mapping/src/components/PngMarker.vue'),
     SvgViewConeMarker: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaSvgViewConeMarker" */'@phila/vue-mapping/src/cyclomedia/SvgViewConeMarker.vue'),
-    MglMap,
-    MglMarker,
-    MglIcon,
-    MglCircleMarker,
-    MglNavigationControl,
-    MglGeolocateControl,
-    MglRasterLayer,
-    MglButtonControl,
-    MglControlContainer,
-    MglImageLayer,
-    MglVectorLayer,
-    MbIcon,
-    MglGeojsonLayer,
+    MglMap: () => import(/* webpackChunkName: "pvm_MglMap" */'@phila/vue-mapping/src/mapbox/map/GlMap.vue'),
+    MglMarker: () => import(/* webpackChunkName: "pvm_MglMarker" */'@phila/vue-mapping/src/mapbox/UI/Marker.vue'),
+    MglIcon: () => import(/* webpackChunkName: "mbmp_pvm_MglIcon" */'@phila/vue-mapping/src/mapbox/UI/Icon.vue'),
+    MglCircleMarker: () => import(/* webpackChunkName: "pvm_MglCircleMarker" */'@phila/vue-mapping/src/mapbox/UI/CircleMarker.vue'),
+    MglNavigationControl: () => import(/* webpackChunkName: "pvm_MglNavigationControl" */'@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl'),
+    MglGeolocateControl: () => import(/* webpackChunkName: "pvm_MglGeolocateControl" */'@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl'),
+    MglRasterLayer: () => import(/* webpackChunkName: "pvm_MglRasterLayer" */'@phila/vue-mapping/src/mapbox/layer/RasterLayer'),
+    MglButtonControl: () => import(/* webpackChunkName: "pvm_MglButtonControl" */'@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue'),
+    MglControlContainer: () => import(/* webpackChunkName: "pvm_MglControlContainer" */'@phila/vue-mapping/src/mapbox/UI/controls/ControlContainer.vue'),
+    MglImageLayer: () => import(/* webpackChunkName: "pvm_MglImageLayer" */'@phila/vue-mapping/src/mapbox/layer/ImageLayer'),
+    MglVectorLayer: () => import(/* webpackChunkName: "pvm_MglVectorLayer" */'@phila/vue-mapping/src/mapbox/layer/VectorLayer'),
+    MbIcon: () => import(/* webpackChunkName: "pvm_MbIcon" */'@phila/vue-mapping/src/mapbox/UI/MbIcon'),
+    MglGeojsonLayer: () => import(/* webpackChunkName: "pvm_MglGeojsonLayer" */'@phila/vue-mapping/src/mapbox/layer/GeojsonLayer'),
   },
   data() {
     const data = {
@@ -478,7 +402,7 @@ export default {
           'type': 'Feature',
           'geometry': {
             'type': 'Point',
-            'coordinates': [-75.163471, 39.953338]
+            'coordinates': []
           }
         }
       },
@@ -487,12 +411,10 @@ export default {
         'type': 'symbol',
         'source': 'cameraPoint',
         'layout': {
-          'icon-image': 'markers',
-          'icon-size': 0.20,
-          // 'icon-keep-upright': true,
+          'icon-image': 'cameraMarker',
+          'icon-size': 0.13,
           'icon-rotate': 0,
           'icon-rotation-alignment': 'map',
-          // 'symbol-placement': 'line',
         }
       },
 
@@ -512,7 +434,7 @@ export default {
         'source': 'viewcone',
         'layout': {},
         'paint': {
-          'fill-color': '#808080',
+          'fill-color': 'rgb(0,102,255)',
           'fill-opacity': 0.5
         }
       },
@@ -523,11 +445,9 @@ export default {
           'type': 'Feature',
           'geometry': {
             'type': 'Point',
-            // 'coordinates': [-75.163471, 39.953338]
           }
         }
       },
-
       geojsonCircleLayer: {
         'id': 'circle500',
         'type': 'circle',
@@ -542,36 +462,6 @@ export default {
         }
       },
 
-      cameraSource: {
-        'id': 'cameraSource',
-        'type': 'image',
-        'url': 'https://mapboard-images.s3.amazonaws.com/camera.png',
-        'coordinates': [[-75.163471, 39.953338]],
-        // 'data': {
-        //   'type': 'FeatureCollection',
-        //   'features': [
-        //     {
-        //       'type': 'Feature',
-        //       'geometry': {
-        //         'type': 'Point',
-        //       }
-        //     }
-        //   ]
-        // },
-        // 'image': {
-        // 'coordinates': [-75.163471, 39.953338],
-        // 'url': 'https://mapboard-images.s3.amazonaws.com/camera.png',
-        // }
-      },
-      cameraLayer: {
-        'id': 'cameraLayer',
-        'type': 'symbol',
-        'source': 'cameraSource',
-        'layout': {
-          'icon-image': 'markers',
-          'icon-size': 0.25
-        }
-      }
     };
     return data;
   },
@@ -644,12 +534,12 @@ export default {
     mapPanelClass() {
       let themap = this.$store.state.map.map;
       if (themap && this.$config.map.type && this.$config.map.type === 'mapbox') {
-        console.log('App.vue watch fullScreenMapEnabled is firing, inside if, map:', themap);
+        // console.log('App.vue watch fullScreenMapEnabled is firing, inside if, map:', themap);
         setTimeout(function(){
           // alert("Hello");
           themap.resize();
         }, 250);
-        console.log('App.vue watch fullScreenMapEnabled still running');
+        // console.log('App.vue watch fullScreenMapEnabled still running');
       }
     },
     geocodeCoordinates(nextGeocodeCoordinates) {
@@ -657,10 +547,10 @@ export default {
       this.$store.commit('setMapCenter', nextGeocodeCoordinates);
     },
     cycloLatlng(nextCycloLatlng) {
-      console.log('watch cycloLatlng, nextCycloLatlng:', nextCycloLatlng, 'this.$data.geojsonCameraSource:', this.$data.geojsonCameraSource);
+      // console.log('watch cycloLatlng, nextCycloLatlng:', nextCycloLatlng, 'this.$data.geojsonCameraSource:', this.$data.geojsonCameraSource);
       this.$data.geojsonCameraSource.data.geometry.coordinates = [nextCycloLatlng[1], nextCycloLatlng[0]];
       this.handleCycloChanges();
-      console.log('watch cycloLatlng end');
+      // console.log('watch cycloLatlng end');
     },
     cycloRotationAngle(nextCycloRotationAngle) {
       // console.log('watch cycloRotationAngle is firing, nextCycloRotationAngle:', nextCycloRotationAngle);
@@ -670,27 +560,6 @@ export default {
     cycloHFov(nextCycloHFov) {
       // console.log('watch cycloHFov is running, nextCycloHFov:', nextCycloHFov);
       this.handleCycloChanges();
-      // const halfAngle = nextCycloHFov / 2.0;
-      // let angle1 = this.cycloRotationAngle - halfAngle;
-      // let angle2 = this.cycloRotationAngle + halfAngle;
-      //
-      // var distance = 2000;
-      // var options = {units: 'feet'};
-      //
-      // var destination1 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle1, options);
-      // var destination2 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle2, options);
-      // console.log('cyclocenter:', [this.cycloLatlng[1], this.cycloLatlng[0]], 'destination1:', destination1.geometry.coordinates, 'destination2:', destination2.geometry.coordinates);
-      //
-      // this.$data.geojsonViewconeSource.data.geometry.coordinates = [
-      //   [
-      //     [this.cycloLatlng[1], this.cycloLatlng[0]],
-      //     // [-75.165471, 39.955338],
-      //     // [-75.165471, 39.956338],
-      //     [destination1.geometry.coordinates[0], destination1.geometry.coordinates[1]],
-      //     [destination2.geometry.coordinates[0], destination1.geometry.coordinates[1]],
-      //     [this.cycloLatlng[1], this.cycloLatlng[0]]
-      //   ]
-      // ]
     },
   },
   computed: {
@@ -861,6 +730,13 @@ export default {
       }
       return markers;
     },
+    cameraOverlay() {
+      if (!this.fullScreenMapEnabled) {
+        return 'cameraPoints';
+      } else {
+        return null;
+      }
+    },
     firstOverlay() {
       let map = this.$store.state.map.map;
       let overlaySources = Object.keys(this.$config.overlaySources);
@@ -882,34 +758,23 @@ export default {
       const halfAngle = this.cycloHFov / 2.0;
       let angle1 = this.cycloRotationAngle - halfAngle;
       let angle2 = this.cycloRotationAngle + halfAngle;
-      // let bearing1 = angle1;
-      // let bearing2;
-      // if (angle1 > 180) {
-      //   let diff = angle1 - 180;
-      //   bearing1 = -180 + diff
-      // }
-      // if (angle2 > 180) {
-      //   let diff = angle2 - 180;
-      //   bearing2 = -180 + diff
-      // }
-      console.log('handleCycloChanges, halfAngle:', halfAngle, 'angle1:', angle1, 'this.cycloRotationAngle:', this.cycloRotationAngle, 'angle2:', angle2);
+      // console.log('handleCycloChanges, halfAngle:', halfAngle, 'angle1:', angle1, 'this.cycloRotationAngle:', this.cycloRotationAngle, 'angle2:', angle2);
 
-      var distance = 2000;
+      var distance = 1300;
       var options = {units: 'feet'};
 
-      // var destination1 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, bearing1, options);
-      // var destination2 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, bearing2, options);
+      if (!this.cycloLatlng) {
+        return;
+      }
+
       var destination1 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle1, options);
       var destination2 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle2, options);
-
       // console.log('cyclocenter:', [this.cycloLatlng[1], this.cycloLatlng[0]], 'destination1:', destination1.geometry.coordinates, 'destination2:', destination2.geometry.coordinates);
       // console.log('destination1:', destination1.geometry.coordinates, 'destination2:', destination2.geometry.coordinates);
 
       this.$data.geojsonViewconeSource.data.geometry.coordinates = [
         [
           [this.cycloLatlng[1], this.cycloLatlng[0]],
-          // [-75.165471, 39.955338],
-          // [-75.165471, 39.956338],
           [destination1.geometry.coordinates[0], destination1.geometry.coordinates[1]],
           [destination2.geometry.coordinates[0], destination2.geometry.coordinates[1]],
           [this.cycloLatlng[1], this.cycloLatlng[0]]
@@ -936,11 +801,7 @@ export default {
       var features = map.queryRenderedFeatures(bbox, {
         layers: ['PVL_Original']
       });
-
       console.log('vectorClicked, features:', features);
-    },
-    testMglButtonControlClick() {
-      console.log('App.vue testMglButtonControlClick is running');
     },
     halfMarathonButtonClicked() {
       // console.log('halfMarathonButtonClicked is running');
@@ -951,33 +812,33 @@ export default {
       this.activeTiledOverlays = ['fullMarathon'];
     },
     handleBasemapToggleClick() {
-      console.log('handleBasemapToggleClick is running, this.activeBasemap:', this.activeBasemap);
+      // console.log('handleBasemapToggleClick is running, this.activeBasemap:', this.activeBasemap);
       if (this.activeBasemap === 'pwd') {
-        console.log('if is running');
+        // console.log('if is running');
         this.activeBasemap = this.$store.state.map.imagery;
         this.tiledLayers = ['imageryBasemapLabels']
       } else if (this.activeBasemap === 'imagery2019') {
-        console.log('else if is running');
+        // console.log('else if is running');
         this.activeBasemap = this.$store.state.map.basemap;
         this.tiledLayers = ['cityBasemapLabels']
       }
     },
     mapToggleClicked() {
-      console.log('mapToggleClicked is running, this.$store', this.$store, 'this.$store.state.fullScreenMapEnabled', this.$store.state.fullScreenMapEnabled);
+      // console.log('mapToggleClicked is running, this.$store', this.$store, 'this.$store.state.fullScreenMapEnabled', this.$store.state.fullScreenMapEnabled);
       this.$store.commit('setFullScreenMapEnabled', !this.$store.state.fullScreenMapEnabled);
       if (this.$store.state.cyclomedia.initializationBegun === false) {
         this.initializeCyclomedia();
       }
     },
     imageToggleClicked() {
-      console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
       this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setShouldInitializeMap', true);
       }
     },
     toggleScreenShare() {
-      console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
       // this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setFullScreenImageryEnabled', true);
@@ -992,9 +853,9 @@ export default {
       }
     },
     initializeCyclomedia() {
-      console.log('app initializeCyclomedia is running');
+      // console.log('app initializeCyclomedia is running');
       if (!this.$store.state.fullScreenMapEnabled) {
-        console.log('app initializeCyclomedia IF is running');
+        // console.log('app initializeCyclomedia IF is running');
         this.$store.commit('setCyclomediaInitializationBegun', true);
         this.$store.commit('setCyclomediaActive', true);
       }

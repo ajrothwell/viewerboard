@@ -22,7 +22,7 @@ function createStore(config) {
     fullScreenImageryEnabled: false,
     map: {
       basemap: 'pwd',
-      zoom: 19,
+      zoom: 14,
     }
   };
   const mb = {
@@ -42,7 +42,7 @@ function createStore(config) {
         state.fullScreen.CycloOnly = payload;
       },
       setFullScreenMapEnabled(state, payload) {
-        console.log('setFullScreenMapEnabled is running, payload:', payload);
+        // console.log('setFullScreenMapEnabled is running, payload:', payload);
         state.fullScreenMapEnabled = payload;
       },
       setFullScreenImageryEnabled(state, payload) {
