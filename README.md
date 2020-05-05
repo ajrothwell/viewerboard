@@ -11,6 +11,10 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.1 - 5/5/2020
+
+* releases from master branch
+
 ### 0.1.0 - 5/5/2020
 
 * uses minor updates to libraries:
