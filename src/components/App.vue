@@ -292,6 +292,7 @@
         <cyclomedia-widget
           v-if="shouldLoadCyclomediaWidget"
           @cyclomedia-widget-mounted="initializeCyclomedia"
+          orientation="full-screen"
         >
           <full-screen-toggle-tab
             :event="'toggle-tab-click'"
