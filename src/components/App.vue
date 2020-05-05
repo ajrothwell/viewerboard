@@ -43,6 +43,7 @@
         /> -->
 
         <map_
+          v-if="this.mapType === 'leaflet'"
           id="map-tag"
           :center="this.$store.state.map.center"
           :zoom="this.$store.state.map.zoom"
@@ -98,14 +99,14 @@
             :h-side="'left'"
           /> -->
 
-          <!-- <div v-once>
+          <div v-once>
             <location-control
               v-if="geolocationEnabled"
               v-once
               :position="'bottomleft'"
               :title="'Locate me'"
             />
-          </div> -->
+          </div>
 
           <!-- location marker -->
           <circle-marker
@@ -170,6 +171,108 @@
 
         </map_>
 
+        <MglMap
+          v-if="this.mapType === 'mapbox'"
+          :mapStyle.sync="this.$config.mbStyle"
+          :zoom="this.$config.map.zoom"
+          :center="this.$config.map.center"
+          @load="this.onMapLoaded"
+          @move="this.handleMapMove"
+        >
+
+          <MglCircleMarker
+            v-for="recording in cyclomediaRecordings"
+            v-if="!fullScreenMapEnabled"
+            :coordinates="[recording.lng, recording.lat]"
+            :key="recording.imageId"
+            :image-id="recording.imageId"
+            :size="1.2"
+            :color="'#3388ff'"
+            :weight="1"
+            @click="handleCyclomediaRecordingClick"
+          />
+
+          <!-- <MbIcon
+            v-if="!fullScreenMapEnabled"
+            :url="'https://mapboard-images.s3.amazonaws.com/camera.png'"
+            :name="'camera'"
+            :rotation-angle="cycloRotationAngle"
+          /> -->
+
+          <MglGeojsonLayer
+            v-if="!fullScreenMapEnabled"
+            :sourceId="'cameraPoint'"
+            :source="geojsonCameraSource"
+            :layerId="'cameraPoints'"
+            :layer="geojsonCameraLayer"
+            :icon="sitePath + 'images/camera.png'"
+          />
+
+          <MglGeojsonLayer
+            v-if="!fullScreenMapEnabled"
+            :sourceId="'viewcone'"
+            :source="geojsonViewconeSource"
+            :layerId="'viewcones'"
+            :layer="geojsonViewconeLayer"
+          />
+
+          <!-- <MglVectorLayer
+            v-if="this.$config.vectorTiles"
+            :source="this.$config.vectorTiles"
+            :sourceId="'PVL_Original'"
+            :layer="this.$config.vectorTiles"
+            :layerId="'PVL_Original'"
+          /> -->
+
+          <MglRasterLayer
+            v-for="(basemapSource, key) in this.basemapSources"
+            v-if="activeBasemap === key"
+            :sourceId="activeBasemap"
+            :layerId="activeBasemap"
+            :layer="basemapSource.layer"
+            :source="basemapSource.source"
+            :before="firstOverlay"
+          />
+
+          <MglRasterLayer
+            v-for="(basemapLabelSource, key) in this.basemapLabelSources"
+            v-if="tiledLayers.includes(key)"
+            :sourceId="key"
+            :layerId="key"
+            :layer="basemapLabelSource.layer"
+            :source="basemapLabelSource.source"
+            :before="firstOverlay"
+          />
+
+          <MglRasterLayer
+            v-for="(overlaySource, key) in this.overlaySources"
+            v-if="activeTiledOverlays.includes(key)"
+            :sourceId="key"
+            :layerId="key"
+            :layer="overlaySource.layer"
+            :source="overlaySource.source"
+            :before="cameraOverlay"
+          />
+
+          <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
+                                   v-once
+                                   @half-marathon-button-clicked="this.halfMarathonButtonClicked"
+                                   @full-marathon-button-clicked="this.fullMarathonButtonClicked"
+                                   :position="'topright'"
+          />
+
+          <MglButtonControl
+            :buttonId="'buttonId-01'"
+            :buttonClass="'right'"
+            :imageLink="BasemapImageLink"
+            @click="this.handleBasemapToggleClick"
+          />
+
+          <MglNavigationControl position="bottom-left"/>
+          <MglGeolocateControl position="bottom-left"/>
+
+        </MglMap>
+
         <full-screen-toggle-tab
           :event="'toggle-tab-click'"
           :initial-activation="mapToggleInitialActivation"
@@ -182,17 +285,14 @@
 
       </div>
 
-      <!-- slot="cycloWidget"
-      screen-percent="2" -->
-      <!-- :orientation="this.$config.cyclomedia.orientation" -->
       <div
         id="image-panel"
         :class="imagePanelClass"
       >
-      <!-- :style="{ 'position': 'relative' }" -->
         <cyclomedia-widget
           v-if="shouldLoadCyclomediaWidget"
           @cyclomedia-widget-mounted="initializeCyclomedia"
+          orientation="full-screen"
         >
           <full-screen-toggle-tab
             :event="'toggle-tab-click'"
@@ -228,45 +328,41 @@
     >
       {{ toggleScreenShareButtonMessage }}
     </PhilaButton>
-    <!-- class="toggle-button" -->
 
-    <!-- <PhilaFooter
-      v-show="isLarge"
-      @howToUseLink="toggleModal()"
-    /> -->
   </div>
 </template>
 
 <script>
+
+import 'mapbox-gl/dist/mapbox-gl.css';
+import destination from '@turf/destination';
+
 import PhilaHeader from './PhilaHeader.vue';
 import PhilaButton from './PhilaButton.vue';
 // import PhilaFooter from './PhilaFooter.vue';
-import MarathonToggleControl from './MarathonToggleControl.vue';
 
-import Map_ from '@phila/vue-mapping/src/leaflet/Map.vue';
-import FullScreenToggleTab from '@phila/vue-mapping/src/components/FullScreenToggleTab.vue';
-import FullScreenMapToggleTab from '@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue';
-import ControlCorner from '@phila/vue-mapping/src/leaflet/ControlCorner.vue';
+import MarathonToggleControl from './MarathonToggleControl.vue';
 import LocationControl from '@phila/vue-mapping/src/components/LocationControl.vue';
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
 import CyclomediaRecordingsClient from '@phila/vue-mapping/src/cyclomedia/recordings-client.js';
-
 import cyclomediaMixin from '@phila/vue-mapping/src/cyclomedia/map-panel-mixin.js';
 
 export default {
-
+  name: 'Viewerboard',
   components: {
     PhilaHeader,
     PhilaButton,
     // PhilaFooter,
     MarathonToggleControl,
-    Map_,
-    FullScreenToggleTab,
-    FullScreenMapToggleTab,
-    ControlCorner,
+    Map_: () => import(/* webpackChunkName: "pvm_Map" */'@phila/vue-mapping/src/leaflet/Map.vue'),
+    FullScreenToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenToggleTab" */'@phila/vue-mapping/src/components/FullScreenToggleTab.vue'),
+    FullScreenMapToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenMapToggleTab" */'@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue'),
+    ControlCorner: () => import(/* webpackChunkName: "pvm_ControlCorner" */'@phila/vue-mapping/src/leaflet/ControlCorner.vue'),
     LocationControl,
+    // LocationControl: () => import(/* webpackChunkName: "pvm_LocationControl" */'@phila/vue-mapping/src/components/LocationControl.vue'),
     BasemapToggleControl,
+    // BasemapToggleControl: () => import(/* webpackChunkName: "pvm_BasemapToggleControl" */'@phila/vue-mapping/src/components/BasemapToggleControl.vue'),
     AddressInput: () => import(/* webpackChunkName: "mbmp_pvc_AddressInput" */'@phila/vue-mapping/src/components/MapAddressInput.vue'),
     CyclomediaWidget: () => import(/* webpackChunkName: "mbmb_pvm_CyclomediaWidget" */'@phila/vue-mapping/src/cyclomedia/Widget.vue'),
     PictometryWidget: () => import(/* webpackChunkName: "mbmb_pvm_PictometryWidget" */'@phila/vue-mapping/src/pictometry/Widget.vue'),
@@ -275,6 +371,19 @@ export default {
     CyclomediaRecordingCircle: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaRecordingCircle" */'@phila/vue-mapping/src/cyclomedia/RecordingCircle.vue'),
     PngMarker: () => import(/* webpackChunkName: "mbmp_pvm_PngMarker" */'@phila/vue-mapping/src/components/PngMarker.vue'),
     SvgViewConeMarker: () => import(/* webpackChunkName: "mbmp_pvm_CyclomediaSvgViewConeMarker" */'@phila/vue-mapping/src/cyclomedia/SvgViewConeMarker.vue'),
+    MglMap: () => import(/* webpackChunkName: "pvm_MglMap" */'@phila/vue-mapping/src/mapbox/map/GlMap.vue'),
+    MglMarker: () => import(/* webpackChunkName: "pvm_MglMarker" */'@phila/vue-mapping/src/mapbox/UI/Marker.vue'),
+    MglIcon: () => import(/* webpackChunkName: "mbmp_pvm_MglIcon" */'@phila/vue-mapping/src/mapbox/UI/Icon.vue'),
+    MglCircleMarker: () => import(/* webpackChunkName: "pvm_MglCircleMarker" */'@phila/vue-mapping/src/mapbox/UI/CircleMarker.vue'),
+    MglNavigationControl: () => import(/* webpackChunkName: "pvm_MglNavigationControl" */'@phila/vue-mapping/src/mapbox/UI/controls/NavigationControl'),
+    MglGeolocateControl: () => import(/* webpackChunkName: "pvm_MglGeolocateControl" */'@phila/vue-mapping/src/mapbox/UI/controls/GeolocateControl'),
+    MglRasterLayer: () => import(/* webpackChunkName: "pvm_MglRasterLayer" */'@phila/vue-mapping/src/mapbox/layer/RasterLayer'),
+    MglButtonControl: () => import(/* webpackChunkName: "pvm_MglButtonControl" */'@phila/vue-mapping/src/mapbox/UI/controls/ButtonControl.vue'),
+    MglControlContainer: () => import(/* webpackChunkName: "pvm_MglControlContainer" */'@phila/vue-mapping/src/mapbox/UI/controls/ControlContainer.vue'),
+    MglImageLayer: () => import(/* webpackChunkName: "pvm_MglImageLayer" */'@phila/vue-mapping/src/mapbox/layer/ImageLayer'),
+    MglVectorLayer: () => import(/* webpackChunkName: "pvm_MglVectorLayer" */'@phila/vue-mapping/src/mapbox/layer/VectorLayer'),
+    MbIcon: () => import(/* webpackChunkName: "pvm_MbIcon" */'@phila/vue-mapping/src/mapbox/UI/MbIcon'),
+    MglGeojsonLayer: () => import(/* webpackChunkName: "pvm_MglGeojsonLayer" */'@phila/vue-mapping/src/mapbox/layer/GeojsonLayer'),
   },
   data() {
     const data = {
@@ -287,6 +396,73 @@ export default {
       activeBasemap: 'pwd',
       tiledLayers: ['cityBasemapLabels'],
       activeTiledOverlays: [],
+
+      geojsonCameraSource: {
+        'type': 'geojson',
+        'data': {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'Point',
+            'coordinates': []
+          }
+        }
+      },
+      geojsonCameraLayer: {
+        'id': 'cameraPoints',
+        'type': 'symbol',
+        'source': 'cameraPoint',
+        'layout': {
+          'icon-image': 'cameraMarker',
+          'icon-size': 0.13,
+          'icon-rotate': 0,
+          'icon-rotation-alignment': 'map',
+        }
+      },
+
+      geojsonViewconeSource: {
+        'type': 'geojson',
+        'data': {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'Polygon',
+            'coordinates': [[]],
+          }
+        }
+      },
+      geojsonViewconeLayer: {
+        'id': 'viewcones',
+        'type': 'fill',
+        'source': 'viewcone',
+        'layout': {},
+        'paint': {
+          'fill-color': 'rgb(0,102,255)',
+          'fill-opacity': 0.5
+        }
+      },
+
+      geojsonCircleSource: {
+        'type': 'geojson',
+        'data': {
+          'type': 'Feature',
+          'geometry': {
+            'type': 'Point',
+          }
+        }
+      },
+      geojsonCircleLayer: {
+        'id': 'circle500',
+        'type': 'circle',
+        'source': 'source_circle_500',
+        'layout': {},
+        //   "visibility": "none"
+        // },
+        'paint': {
+          'circle-radius': 10,
+          'circle-color': '#5b94c6',
+          'circle-opacity': 0.6
+        }
+      },
+
     };
     return data;
   },
@@ -303,6 +479,9 @@ export default {
     if (this.$config.map) {
       if (this.$config.map.shouldInitialize === false) {
         this.$store.commit('setShouldInitializeMap', false);
+      }
+      if (this.$config.map.type) {
+        this.$store.commit('setMapType', this.$config.map.type);
       }
     }
     window.addEventListener('resize', this.handleWindowResize);
@@ -343,14 +522,67 @@ export default {
         // this.$store.commit('setFullScreenMapEnabled', true);
       }
     }
+
+    // if (this.mapType === 'mapbox') {
+    //   let map = this.$store.state.map.map;
+    //   console.log('App mounted, map:', map);
+    //   for (let source of Object.keys(this.$config.sources)) {
+    //     map.addSource(source, this.$config.sources.source);
+    //   }
+    // }
   },
   watch: {
+    mapPanelClass() {
+      let themap = this.$store.state.map.map;
+      if (themap && this.$config.map.type && this.$config.map.type === 'mapbox') {
+        // console.log('App.vue watch fullScreenMapEnabled is firing, inside if, map:', themap);
+        setTimeout(function(){
+          // alert("Hello");
+          themap.resize();
+        }, 250);
+        // console.log('App.vue watch fullScreenMapEnabled still running');
+      }
+    },
     geocodeCoordinates(nextGeocodeCoordinates) {
       this.$store.commit('setCyclomediaLatLngFromMap', [this.$store.state.geocode.data.geometry.coordinates[1], this.$store.state.geocode.data.geometry.coordinates[0]]);
       this.$store.commit('setMapCenter', nextGeocodeCoordinates);
     },
+    cycloLatlng(nextCycloLatlng) {
+      // console.log('watch cycloLatlng, nextCycloLatlng:', nextCycloLatlng, 'this.$data.geojsonCameraSource:', this.$data.geojsonCameraSource);
+      this.$data.geojsonCameraSource.data.geometry.coordinates = [nextCycloLatlng[1], nextCycloLatlng[0]];
+      this.handleCycloChanges();
+      // console.log('watch cycloLatlng end');
+    },
+    cycloRotationAngle(nextCycloRotationAngle) {
+      // console.log('watch cycloRotationAngle is firing, nextCycloRotationAngle:', nextCycloRotationAngle);
+      this.$data.geojsonCameraLayer.layout['icon-rotate'] = nextCycloRotationAngle;
+      this.handleCycloChanges();
+    },
+    cycloHFov(nextCycloHFov) {
+      // console.log('watch cycloHFov is running, nextCycloHFov:', nextCycloHFov);
+      this.handleCycloChanges();
+    },
   },
   computed: {
+    BasemapImageLink() {
+      if (this.activeBasemap === 'pwd') {
+        return 'images/imagery_small.png';
+      } else {
+        return 'images/basemap_small.png';
+      }
+    },
+    basemapSources() {
+      return this.$config.basemapSources;
+    },
+    basemapLabelSources() {
+      return this.$config.basemapLabelSources;
+    },
+    overlaySources() {
+      return this.$config.overlaySources;
+    },
+    mapType() {
+      return this.$store.state.map.type;
+    },
     basemaps() {
       return Object.values(this.$config.map.basemaps);
     },
@@ -447,12 +679,14 @@ export default {
         const xyz = this.$store.state.cyclomedia.orientation.xyz;
         return [ xyz[1], xyz[0] ];
       }
-      const center = this.$config.map.center;
-      return center;
+      return null;
+      // const center = this.$config.map.center;
+      // return center;
 
     },
     cycloRotationAngle() {
-      return this.$store.state.cyclomedia.orientation.yaw;// * (180/3.14159265359);
+      let angle = this.$store.state.cyclomedia.orientation.yaw || 0;// * (180/3.14159265359);
+      return angle;
     },
     cycloHFov() {
       return this.$store.state.cyclomedia.orientation.hFov;
@@ -497,8 +731,79 @@ export default {
       }
       return markers;
     },
+    cameraOverlay() {
+      if (!this.fullScreenMapEnabled) {
+        return 'cameraPoints';
+      } else {
+        return null;
+      }
+    },
+    firstOverlay() {
+      let map = this.$store.state.map.map;
+      let overlaySources = Object.keys(this.$config.overlaySources);
+      let overlay;
+      if (map) {
+        let overlays = map.getStyle().layers.filter(function(layer) {
+          // console.log('layer.id:', layer.id, 'overlaySources:', overlaySources);
+          return overlaySources.includes(layer.id);//[0].id;
+        })
+        if (overlays.length) {
+          overlay = overlays[0].id
+        }
+      }
+      return overlay;
+    }
   },
   methods: {
+    handleCycloChanges() {
+      const halfAngle = this.cycloHFov / 2.0;
+      let angle1 = this.cycloRotationAngle - halfAngle;
+      let angle2 = this.cycloRotationAngle + halfAngle;
+      // console.log('handleCycloChanges, halfAngle:', halfAngle, 'angle1:', angle1, 'this.cycloRotationAngle:', this.cycloRotationAngle, 'angle2:', angle2);
+
+      var distance = 1300;
+      var options = {units: 'feet'};
+
+      if (!this.cycloLatlng) {
+        return;
+      }
+
+      var destination1 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle1, options);
+      var destination2 = destination([this.cycloLatlng[1], this.cycloLatlng[0]], distance, angle2, options);
+      // console.log('cyclocenter:', [this.cycloLatlng[1], this.cycloLatlng[0]], 'destination1:', destination1.geometry.coordinates, 'destination2:', destination2.geometry.coordinates);
+      // console.log('destination1:', destination1.geometry.coordinates, 'destination2:', destination2.geometry.coordinates);
+
+      this.$data.geojsonViewconeSource.data.geometry.coordinates = [
+        [
+          [this.cycloLatlng[1], this.cycloLatlng[0]],
+          [destination1.geometry.coordinates[0], destination1.geometry.coordinates[1]],
+          [destination2.geometry.coordinates[0], destination2.geometry.coordinates[1]],
+          [this.cycloLatlng[1], this.cycloLatlng[0]]
+        ]
+      ]
+    },
+    onMapLoaded(map) {
+      this.$store.commit('setMap', map);
+
+      // for (let source of Object.keys(this.$config.sources)) {
+      //   console.log('source:', source);
+      //   map.map.addSource(source, this.$config.sources[source]);
+      // }
+    },
+    vectorClicked(e) {
+      console.log('vectorClicked is running, e:', e, 'e.mapboxEvent.point:', e.mapboxEvent.point);
+      let map = this.$store.state.map.map;
+      var bbox = [
+        [e.mapboxEvent.point.x - 5, e.mapboxEvent.point.y - 5],
+        [e.mapboxEvent.point.x + 5, e.mapboxEvent.point.y + 5]
+        // [e.point.x - 5, e.point.y - 5],
+        // [e.point.x + 5, e.point.y + 5]
+      ];
+      var features = map.queryRenderedFeatures(bbox, {
+        layers: ['PVL_Original']
+      });
+      console.log('vectorClicked, features:', features);
+    },
     halfMarathonButtonClicked() {
       // console.log('halfMarathonButtonClicked is running');
       this.activeTiledOverlays = ['halfMarathon'];
@@ -508,33 +813,33 @@ export default {
       this.activeTiledOverlays = ['fullMarathon'];
     },
     handleBasemapToggleClick() {
-      console.log('handleBasemapToggleClick is running, this.activeBasemap:', this.activeBasemap);
+      // console.log('handleBasemapToggleClick is running, this.activeBasemap:', this.activeBasemap);
       if (this.activeBasemap === 'pwd') {
-        console.log('if is running');
+        // console.log('if is running');
         this.activeBasemap = this.$store.state.map.imagery;
         this.tiledLayers = ['imageryBasemapLabels']
       } else if (this.activeBasemap === 'imagery2019') {
-        console.log('else if is running');
+        // console.log('else if is running');
         this.activeBasemap = this.$store.state.map.basemap;
         this.tiledLayers = ['cityBasemapLabels']
       }
     },
     mapToggleClicked() {
-      console.log('mapToggleClicked is running, this.$store', this.$store, 'this.$store.state.fullScreenMapEnabled', this.$store.state.fullScreenMapEnabled);
+      // console.log('mapToggleClicked is running, this.$store', this.$store, 'this.$store.state.fullScreenMapEnabled', this.$store.state.fullScreenMapEnabled);
       this.$store.commit('setFullScreenMapEnabled', !this.$store.state.fullScreenMapEnabled);
       if (this.$store.state.cyclomedia.initializationBegun === false) {
         this.initializeCyclomedia();
       }
     },
     imageToggleClicked() {
-      console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
       this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setShouldInitializeMap', true);
       }
     },
     toggleScreenShare() {
-      console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
       // this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setFullScreenImageryEnabled', true);
@@ -549,9 +854,9 @@ export default {
       }
     },
     initializeCyclomedia() {
-      console.log('app initializeCyclomedia is running');
+      // console.log('app initializeCyclomedia is running');
       if (!this.$store.state.fullScreenMapEnabled) {
-        console.log('app initializeCyclomedia IF is running');
+        // console.log('app initializeCyclomedia IF is running');
         this.$store.commit('setCyclomediaInitializationBegun', true);
         this.$store.commit('setCyclomediaActive', true);
       }
@@ -564,7 +869,7 @@ export default {
       this.$controller.handleSearchFormSubmit(value);
     },
     handleMapMove(e) {
-      console.log('handleMapMove is starting');
+      // console.log('handleMapMove is starting');
       const map = this.$store.state.map.map;
       if (!map) {
         return;
@@ -573,7 +878,7 @@ export default {
       const { lat, lng } = center;
       const coords = [ lng, lat ];
 
-      console.log('handleMapMove is running, coords:', coords);
+      // console.log('handleMapMove is running, coords:', coords);
 
       const pictometryConfig = this.$config.pictometry || {};
       const cyclomediaConfig = this.$config.cyclomedia || {};
@@ -629,6 +934,15 @@ export default {
 
 <style lang="scss">
 @import "@/scss/global.scss";
+
+.map-overlay {
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  position: absolute;
+  width: 200px;
+  top: 0;
+  left: 0;
+  padding: 10px;
+}
 
 #app {
   height: 100%;

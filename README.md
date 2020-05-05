@@ -11,6 +11,13 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.0 - 5/5/2020
+
+* uses minor updates to libraries:
+  * @phila/vue-comps 2.1.1
+  * @phila/vue-mapping 2.1.1
+  * @phila/vue-datafetch 1.2.0
+
 ### 0.0.4 - 2/7/2020
 
 * adds PhilaButton comp (same comp as in @phila/pinboard)
