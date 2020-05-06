@@ -874,10 +874,10 @@
     vue "^2.6.10"
     vuex "^3.1.2"
 
-"@phila/vue-mapping@2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@phila/vue-mapping/-/vue-mapping-2.1.1.tgz#040014682c761f85105443ebd9097c426f7ff933"
-  integrity sha512-PBoe5fa/gG4d5YLWRODwdIBnuDQxTHVkL16y9+dbf6wY3CA2rPiuaBMhGWs6pwK0PKj8sUq/LjWkm8+wAaD7VA==
+"@phila/vue-mapping@2.1.2":
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/@phila/vue-mapping/-/vue-mapping-2.1.2.tgz#1d418dabc244a212535333817bb2229b14d0e791"
+  integrity sha512-uH/1jIYAHd570OuD9MIFSfePHc17ugbP1w0qrc3CwkPC4OlPYZfdBsqTUAb+V95WbZZSaIR1Uc6m5UGoaGIVAw==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^1.2.15"
     "@fortawesome/free-regular-svg-icons" "^5.7.2"

@@ -99,14 +99,15 @@
             :h-side="'left'"
           /> -->
 
-          <div v-once>
+          <!-- <div v-once> -->
             <location-control
               v-if="geolocationEnabled"
-              v-once
+              v-show="!fullScreenImageryEnabled"
               :position="'bottomleft'"
               :title="'Locate me'"
             />
-          </div>
+            <!-- v-once
+          </div> -->
 
           <!-- location marker -->
           <circle-marker
@@ -136,7 +137,7 @@
           <!-- marker using a png and ablility to rotate it -->
           <!-- v-if="cyclomediaActive" -->
           <png-marker
-            v-if="!fullScreenMapEnabled"
+            v-if="!fullScreenMapEnabled && this.$config.cyclomedia.enabled"
             :icon="sitePath + 'images/camera.png'"
             :latlng="cycloLatlng"
             :rotation-angle="cycloRotationAngle"
@@ -309,11 +310,12 @@
           v-show="true"
           @pictometry-widget-mounted="initializePictometry"
           :set-location="true"
+          orientation="full-screen"
         >
           <full-screen-toggle-tab
             :event="'toggle-tab-click'"
             :initial-activation="imageryToggleInitialActivation"
-            :deactivated-direction="'right'"
+            :deactivated-direction="'left'"
             @toggle-tab-click="imageToggleClicked"
             panel="imagery"
           />
