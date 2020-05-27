@@ -11,6 +11,14 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.3 - 5/27/2020
+
+* upgrades packages
+
+### 0.1.2 - 5/6/2020
+
+* makes fix to pictometry widget
+
 ### 0.1.1 - 5/5/2020
 
 * releases from master branch
