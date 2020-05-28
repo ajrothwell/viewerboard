@@ -745,12 +745,15 @@ export default {
       let overlaySources = Object.keys(this.$config.overlaySources);
       let overlay;
       if (map) {
+        // console.log('map.getStyle().layers:', map.getStyle().layers);
         let overlays = map.getStyle().layers.filter(function(layer) {
           // console.log('layer.id:', layer.id, 'overlaySources:', overlaySources);
           return overlaySources.includes(layer.id);//[0].id;
         })
         if (overlays.length) {
           overlay = overlays[0].id
+        } else if (this.cyclomediaActive) {
+          overlay = 'cameraPoints';
         }
       }
       return overlay;
