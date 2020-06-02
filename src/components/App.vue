@@ -265,7 +265,7 @@
           <MglButtonControl
             :buttonId="'buttonId-01'"
             :buttonClass="'right'"
-            :imageLink="BasemapImageLink"
+            :imageLink="basemapImageLink"
             @click="this.handleBasemapToggleClick"
           />
 
@@ -566,7 +566,7 @@ export default {
     },
   },
   computed: {
-    BasemapImageLink() {
+    basemapImageLink() {
       if (this.activeBasemap === 'pwd') {
         return 'images/imagery_small.png';
       } else {
