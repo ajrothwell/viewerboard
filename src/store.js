@@ -9,7 +9,9 @@ import mergeDeep from './util/merge-deep';
 Vue.use(Vuex);
 
 function createStore(config) {
+  const sources = pvdStore.createSources(config);
   const initialState = {
+    sources,
     windowDimensions: {
       height: 0,
       width: 0,

@@ -30,10 +30,10 @@ function initVue(config) {
   Vue.use(configMixin, config);
   Vue.component('font-awesome-icon', FontAwesomeIcon);
 
-  // const customComps = config.customComps || [];
-  // for (let key of Object.keys(customComps)) {
-  //   Vue.component(key, customComps[key]);
-  // }
+  const customComps = config.customComps || [];
+  for (let key of Object.keys(customComps)) {
+    Vue.component(key, customComps[key]);
+  }
 
   // create store
   const store = createStore(config);

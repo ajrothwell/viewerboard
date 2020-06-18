@@ -172,14 +172,27 @@
 
         </map_>
 
+        <!-- :mapStyle.sync="this.$config.mbStyle" -->
         <MglMap
-          v-if="this.mapType === 'mapbox'"
-          :mapStyle.sync="this.$config.mbStyle"
+          v-if="shouldShowMglMap && this.mapType === 'mapbox'"
+          :accessToken="accessToken"
+          :mapStyle.sync="computedMapStyle"
           :zoom="this.$config.map.zoom"
           :center="this.$config.map.center"
+          @moveend="this.handleMapMove"
           @load="this.onMapLoaded"
-          @move="this.handleMapMove"
+          @preload="this.onMapPreloaded"
+          @click="handleMapClick"
         >
+        <!-- @mouseover="handleMouseOver"
+        @mouseout="handleMouseOut" -->
+
+          <component
+            v-for="comp in Object.keys(customMapComponent)"
+            :is="customMapComponent[comp]"
+            :position="'topleft'"
+          />
+          <!-- v-if="shouldShowHeader" -->
 
           <MglCircleMarker
             v-for="recording in cyclomediaRecordings"
@@ -187,9 +200,11 @@
             :coordinates="[recording.lng, recording.lat]"
             :key="recording.imageId"
             :image-id="recording.imageId"
-            :size="1.2"
-            :color="'#3388ff'"
+            :size="14"
+            :fill-color="'#3388ff'"
+            :color="'black'"
             :weight="1"
+            :opacity="0.5"
             @click="handleCyclomediaRecordingClick"
           />
 
@@ -217,27 +232,44 @@
             :layer="geojsonViewconeLayer"
           />
 
-          <!-- <MglVectorLayer
-            v-if="this.$config.vectorTiles"
-            :source="this.$config.vectorTiles"
+          <MglVectorLayer
+            v-for="layer in $config.vectorTilesLayers"
+            v-if="$config.vectorTilesLayers"
             :sourceId="'PVL_Original'"
-            :layer="this.$config.vectorTiles"
+            :source="layer.source"
+            :layer="layer"
+            :layerId="layer.id"
+            @mouseover="handleVectorLayerMouseover"
+            @mouseout="handleVectorLayerMouseout"
+          />
+
+          <!--
+          :source="$config.vectorTilesSources.streetsVectorSource"
+          :sourceId="'PVL_Original'"
+          :layer="this.$config.vectorTilesLayers.streetsVectorLayer"
+          :layerId="'PVL_Original'"
+          -->
+
+          <!-- <MglVectorLayer
+            :source="streetsVectorSource"
+            :sourceId="'PVL_Original'"
+            :layer="streetsVectorLayer"
             :layerId="'PVL_Original'"
           /> -->
 
-          <MglRasterLayer
+          <!-- <MglRasterLayer
             v-for="(basemapSource, key) in this.basemapSources"
-            v-if="activeBasemap === key"
+            v-if="shouldShowRasterLayer && activeBasemap === key"
             :sourceId="activeBasemap"
             :layerId="activeBasemap"
             :layer="basemapSource.layer"
             :source="basemapSource.source"
             :before="firstOverlay"
-          />
+          /> -->
 
           <MglRasterLayer
             v-for="(basemapLabelSource, key) in this.basemapLabelSources"
-            v-if="tiledLayers.includes(key)"
+            v-if="shouldShowRasterLayer && tiledLayers.includes(key)"
             :sourceId="key"
             :layerId="key"
             :layer="basemapLabelSource.layer"
@@ -247,7 +279,7 @@
 
           <MglRasterLayer
             v-for="(overlaySource, key) in this.overlaySources"
-            v-if="activeTiledOverlays.includes(key)"
+            v-if="shouldShowRasterLayer && activeTiledOverlays.includes(key)"
             :sourceId="key"
             :layerId="key"
             :layer="overlaySource.layer"
@@ -255,14 +287,15 @@
             :before="cameraOverlay"
           />
 
-          <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
+          <!-- <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
                                    v-once
                                    @half-marathon-button-clicked="this.halfMarathonButtonClicked"
                                    @full-marathon-button-clicked="this.fullMarathonButtonClicked"
                                    :position="'topright'"
-          />
+          /> -->
 
           <MglButtonControl
+            v-if="shouldShowBasemapToggleControl"
             :buttonId="'buttonId-01'"
             :buttonClass="'right'"
             :imageLink="basemapImageLink"
@@ -348,7 +381,7 @@ import LocationControl from '@phila/vue-mapping/src/components/LocationControl.v
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
 import CyclomediaRecordingsClient from '@phila/vue-mapping/src/cyclomedia/recordings-client.js';
-import cyclomediaMixin from '@phila/vue-mapping/src/cyclomedia/map-panel-mixin.js';
+import cyclomediaMixin from '@phila/vue-mapping/src/cyclomedia/map-panel-mixin-update.js';
 
 export default {
   name: 'Viewerboard',
@@ -393,11 +426,14 @@ export default {
       mbRootStyle: {
         'height': '100px',
       },
+      accessToken: process.env.VUE_APP_MAPBOX_ACCESSTOKEN,
+      hoveredStateId: null,
       mapToggleInitialActivation: null,
       imageryToggleInitialActivation: null,
       activeBasemap: 'pwd',
       tiledLayers: ['cityBasemapLabels'],
       activeTiledOverlays: [],
+      // shouldShowMglMap: false,
 
       geojsonCameraSource: {
         'type': 'geojson',
@@ -464,7 +500,6 @@ export default {
           'circle-opacity': 0.6
         }
       },
-
     };
     return data;
   },
@@ -489,13 +524,17 @@ export default {
     window.addEventListener('resize', this.handleWindowResize);
   },
   mounted() {
+    if (this.$config.dataSources) {
+      this.$controller.dataManager.fetchData();
+    }
     if (this.$config.initialTiledOverlays) {
       this.activeTiledOverlays = this.$config.initialTiledOverlays;
     }
     if (this.$config.map.center) {
       this.$store.commit('setMapCenter', this.$config.map.center);
     }
-    if (this.$config.map.zoom && this.$store.state.map.map) {
+    // if (this.$config.map.zoom && this.$store.map) {
+    if (this.$config.map.zoom && this.$store.map) {
       this.$store.commit('setMapZoom', this.$config.map.zoom);
     }
     console.log('viewerboard app mounted, this.$config:', this.$config, 'this.$config.initialView.length:', this.$config.initialView.length);
@@ -526,7 +565,7 @@ export default {
     }
 
     // if (this.mapType === 'mapbox') {
-    //   let map = this.$store.state.map.map;
+    //   let map = this.$store.map;
     //   console.log('App mounted, map:', map);
     //   for (let source of Object.keys(this.$config.sources)) {
     //     map.addSource(source, this.$config.sources.source);
@@ -534,8 +573,23 @@ export default {
     // }
   },
   watch: {
+    // sources(nextSources) {
+    //   this.$nextTick(() => {
+    //     console.log('watch sources is firing');
+    //   });
+    // },
+    // computedMapStyle() {
+    //   this.$nextTick(() => {
+    //     // if (this.mapType === 'leaflet') {
+    //     //   this.$store.state.map.map.invalidateSize();
+    //     // } else if (this.mapType === 'mapbox') {
+    //     //   this.$store.state.map.map.resize();
+    //     // }
+    //     console.log('watchComputedMapStyle is firing');
+    //   });
+    // },
     mapPanelClass() {
-      let themap = this.$store.state.map.map;
+      let themap = this.$store.map;
       if (themap && this.$config.map.type && this.$config.map.type === 'mapbox') {
         // console.log('App.vue watch fullScreenMapEnabled is firing, inside if, map:', themap);
         setTimeout(function(){
@@ -566,6 +620,82 @@ export default {
     },
   },
   computed: {
+    sources() {
+      return this.$store.state.sources;
+    },
+    customMapComponent() {
+      if (this.$config.customComps) {
+        return this.$config.customComps;
+      } else {
+        return {}
+      }
+    },
+    shouldShowMglMap() {
+      console.log('computed shouldShowMglMap is running, this.$store.state.sources.length:', this.$store.state.sources.length);
+      if (this.$config.mbStyle !== 'test') {
+        return true;
+      } else if (this.$store.state.sources.length) {
+      // if (this.$store.state.sources.length && this.$store.state.sources.testStyle.status) {
+        if (this.$store.state.sources.testStyle.status === 'success') {
+          console.log('computed shouldShowMglMap is returning success');
+          return true;
+        } else {
+          console.log('computed shouldShowMglMap is returning false');
+          return false;
+        }
+      } else {
+        console.log('computed shouldShowMglMap has no sources, returning false');
+        return true;
+      }
+    },
+    computedMapStyle() {
+      let value;
+      console.log('computedMapStyle, this.$config:', this.$config);
+      // if (this.$config) {
+      //   return value;
+      // }
+      if (this.$config.mbStyle === 'test' && this.$store.state.sources.testStyle.data) {
+        console.log('computedMapStyle if is running');
+        value = {
+          version: 8,
+          sources: {
+            esri: {
+              type: "vector",
+                tiles: [
+                  'https://basemaps.arcgis.com/arcgis/rest/services/OpenStreetMap_v2/VectorTileServer/tile/{z}/{y}/{x}.pbf',
+                ],
+                maxzoom: 22,
+            },
+          },
+          layers: this.$store.state.sources.testStyle.data.layers,
+          glyphs: this.$store.state.sources.testStyle.data.glyphs,
+        }
+      // } else if (this.$config.mbStyle === 'test') {
+        // value = {
+        //   version: 8,
+        //   sources: {
+        //     esri: {
+        //       type: "vector",
+        //         tiles: [
+        //           'https://basemaps.arcgis.com/arcgis/rest/services/OpenStreetMap_v2/VectorTileServer/tile/{z}/{y}/{x}.pbf',
+        //         ],
+        //         maxzoom: 22,
+        //     },
+        //   },
+        // }
+      } else {
+        value = this.$config.mbStyle;
+      }
+      // console.log('computedMapStyle, value:', value, 'value.version:', value.version);
+      return value;
+    },
+    shouldShowRasterLayer() {
+      let value = true;
+      if (this.$config.map.tiles === 'hosted') {
+        value = false
+      }
+      return value;
+    },
     basemapImageLink() {
       if (this.activeBasemap === 'pwd') {
         return 'images/imagery_small.png';
@@ -741,7 +871,7 @@ export default {
       }
     },
     firstOverlay() {
-      let map = this.$store.state.map.map;
+      let map = this.$store.map;
       let overlaySources = Object.keys(this.$config.overlaySources);
       let overlay;
       if (map) {
@@ -749,17 +879,73 @@ export default {
         let overlays = map.getStyle().layers.filter(function(layer) {
           // console.log('layer.id:', layer.id, 'overlaySources:', overlaySources);
           return overlaySources.includes(layer.id);//[0].id;
-        })
+        });
         if (overlays.length) {
-          overlay = overlays[0].id
+          overlay = overlays[0].id;
         } else if (this.cyclomediaActive) {
           overlay = 'cameraPoints';
         }
       }
       return overlay;
-    }
+    },
   },
   methods: {
+    handleMapClick(e) {
+      let map = this.$store.map;
+      let features = map.queryRenderedFeatures(e.mapboxEvent.point);
+      console.log('handleMapClick is running e:', e, 'map:', map, 'features:', features);
+    },
+    handleVectorLayerMouseover(event) {
+      let e = event.mapboxEvent;
+      let hoveredStateId = this.$data.hoveredStateId;
+      let hoveredFeatureData;
+      this.$store.map.getCanvas().style.cursor = 'pointer';
+      console.log('handleVectorLayerMouseover is running, e:', e);
+      if (e.features.length > 0) {
+        if (hoveredStateId) {
+          this.$store.commit('setVectorLayerMouseover', null);
+          this.$data.hoveredStateId = null;
+          this.$store.map.setFeatureState({
+            source: 'streetsVectorSource',
+            sourceLayer: 'Street_Centerline_PVL',
+            id: hoveredStateId,
+          },{
+            hover: false
+          });
+        }
+        hoveredStateId = e.features[0].id;
+        hoveredFeatureData = e.features[0].properties
+        console.log('still going, hoveredStateId:', hoveredStateId);
+        this.$store.commit('setVectorLayerMouseover', hoveredFeatureData);
+        this.$data.hoveredStateId = hoveredStateId;
+        this.$store.map.setFeatureState({
+          source: 'streetsVectorSource',
+          sourceLayer: 'Street_Centerline_PVL',
+          id: hoveredStateId,
+        },{
+          hover: true
+        });
+      }
+    },
+    handleVectorLayerMouseout(event) {
+      let e = event.mapboxEvent;
+      let hoveredStateId = this.$data.hoveredStateId;
+      let hoveredFeatureData;
+      this.$store.map.getCanvas().style.cursor = '';
+      console.log('handleVectorLayerMouseout is running, e:', e);
+      if (hoveredStateId) {
+        this.$store.commit('setVectorLayerMouseover', null);
+        this.$data.hoveredStateId = null;
+        this.$store.map.setFeatureState({
+          source: 'streetsVectorSource',
+          sourceLayer: 'Street_Centerline_PVL',
+          id: hoveredStateId,
+        },{
+          hover: false
+        });
+      }
+      // hoveredStateId = null;
+    },
     handleCycloChanges() {
       const halfAngle = this.cycloHFov / 2.0;
       let angle1 = this.cycloRotationAngle - halfAngle;
@@ -787,17 +973,20 @@ export default {
         ]
       ]
     },
-    onMapLoaded(map) {
-      this.$store.commit('setMap', map);
-
-      // for (let source of Object.keys(this.$config.sources)) {
-      //   console.log('source:', source);
-      //   map.map.addSource(source, this.$config.sources[source]);
-      // }
+    onMapLoaded(event) {
+      // this.$store.commit('setMap', map);
+      this.$store.map = event.map;
+    },
+    onMapPreloaded(event) {
+      let logo = document.getElementsByClassName('mapboxgl-ctrl-logo');
+      // console.log('MapPanel onMapPreloaded, logo:', logo, 'logo.length:', logo.length, 'logo.item(0):', logo.item(0));
+      logo[0].remove();
+      let attrib = document.getElementsByClassName('mapboxgl-ctrl-attrib');
+      attrib[0].remove();
     },
     vectorClicked(e) {
       console.log('vectorClicked is running, e:', e, 'e.mapboxEvent.point:', e.mapboxEvent.point);
-      let map = this.$store.state.map.map;
+      let map = this.$store.map;
       var bbox = [
         [e.mapboxEvent.point.x - 5, e.mapboxEvent.point.y - 5],
         [e.mapboxEvent.point.x + 5, e.mapboxEvent.point.y + 5]
@@ -837,14 +1026,14 @@ export default {
       }
     },
     imageToggleClicked() {
-      // console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('imageToggleClicked is running, this.$store', this.$store, 'this.$store.map', this.$store.map);
       this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setShouldInitializeMap', true);
       }
     },
     toggleScreenShare() {
-      // console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.state.map.map', this.$store.state.map.map);
+      // console.log('toggleScreenShare is running, this.$store', this.$store, 'this.$store.map', this.$store.map);
       // this.$store.commit('setFullScreenImageryEnabled', !this.$store.state.fullScreenImageryEnabled);
       if (this.$store.state.fullScreenImageryEnabled === false) {
         this.$store.commit('setFullScreenImageryEnabled', true);
@@ -875,7 +1064,7 @@ export default {
     },
     handleMapMove(e) {
       // console.log('handleMapMove is starting');
-      const map = this.$store.state.map.map;
+      const map = this.$store.map;
       if (!map) {
         return;
       }
