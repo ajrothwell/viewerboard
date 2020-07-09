@@ -192,7 +192,7 @@
             :layer-id="activeBasemap"
             :layer="basemapSource.layer"
             :source="basemapSource.source"
-            :before="firstOverlay"
+            :before="basemapsBefore"
           />
 
           <MglRasterLayer
@@ -203,7 +203,7 @@
             :layer-id="key"
             :layer="basemapLabelSource.layer"
             :source="basemapLabelSource.source"
-            :before="firstOverlay"
+            :before="basemapsBefore"
           />
 
           <MglRasterLayer
@@ -842,24 +842,29 @@ export default {
         return null;
       }
     },
-    firstOverlay() {
-      let map = this.$store.map;
-      let overlaySources = Object.keys(this.$config.overlaySources);
-      let overlay;
-      console.log('App.vue firstOverlay computed is running, map:', map);
-      if (map) {
-        // console.log('map.getStyle().layers:', map.getStyle().layers);
-        let overlays = map.getStyle().layers.filter(function(layer) {
-          console.log('App.vue firstOverlay computed, layer.id:', layer.id, 'overlaySources:', overlaySources);
-          return overlaySources.includes(layer.id);//[0].id;
-        });
-        if (overlays.length) {
-          overlay = overlays[0].id;
-        } else if (this.cyclomediaActive) {
-          overlay = 'cameraPoints';
-        }
+    basemapsBefore() {
+      let value = this.cameraOverlay;
+      if (this.activeTiledOverlays && this.activeTiledOverlays.length) {
+        value = this.activeTiledOverlays[this.activeTiledOverlays.length-1];
       }
-      return overlay;
+      return value;
+      // let map = this.$store.map;
+      // let overlaySources = Object.keys(this.$config.overlaySources);
+      // let overlay;
+      // console.log('App.vue basemapsBefore computed is running, map:', map);
+      // if (map) {
+      //   // console.log('map.getStyle().layers:', map.getStyle().layers);
+      //   let overlays = map.getStyle().layers.filter(function(layer) {
+      //     console.log('App.vue basemapsBefore computed, layer.id:', layer.id, 'overlaySources:', overlaySources);
+      //     return overlaySources.includes(layer.id);//[0].id;
+      //   });
+      //   if (overlays.length) {
+      //     overlay = overlays[0].id;
+      //   } else if (this.cyclomediaActive) {
+      //     overlay = 'cameraPoints';
+      //   }
+      // }
+      // return overlay;
     },
   },
   methods: {
