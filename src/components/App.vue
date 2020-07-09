@@ -152,14 +152,14 @@
             :h-fov="cycloHFov"
           />
 
-          <div v-once>
+          <!-- <div v-once>
             <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
                                      v-once
                                      @half-marathon-button-clicked="this.halfMarathonButtonClicked"
                                      @full-marathon-button-clicked="this.fullMarathonButtonClicked"
                                      :position="'topright'"
             />
-          </div>
+          </div> -->
 
           <div v-once>
             <basemap-toggle-control v-if="shouldShowBasemapToggleControl"
@@ -172,27 +172,57 @@
 
         </map_>
 
-        <!-- :mapStyle.sync="this.$config.mbStyle" -->
         <MglMap
-          v-if="shouldShowMglMap && this.mapType === 'mapbox'"
+          v-if="shouldShowMglMap && mapType === 'mapbox'"
           :accessToken="accessToken"
           :mapStyle.sync="computedMapStyle"
-          :zoom="this.$config.map.zoom"
-          :center="this.$config.map.center"
-          @moveend="this.handleMapMove"
-          @load="this.onMapLoaded"
-          @preload="this.onMapPreloaded"
+          :zoom="$config.map.zoom"
+          :center="$config.map.center"
+          @moveend="handleMapMove"
+          @load="onMapLoaded"
+          @preload="onMapPreloaded"
           @click="handleMapClick"
         >
-        <!-- @mouseover="handleMouseOver"
-        @mouseout="handleMouseOut" -->
+
+          <MglRasterLayer
+            v-for="(basemapSource, key) in basemapSources"
+            v-if="shouldShowRasterLayer && activeBasemap === key"
+            :key="key"
+            :source-id="activeBasemap"
+            :layer-id="activeBasemap"
+            :layer="basemapSource.layer"
+            :source="basemapSource.source"
+            :before="firstOverlay"
+          />
+
+          <MglRasterLayer
+            v-for="(basemapLabelSource, key) in basemapLabelSources"
+            v-if="shouldShowRasterLayer && tiledLayers.includes(key)"
+            :key="key"
+            :source-id="key"
+            :layer-id="key"
+            :layer="basemapLabelSource.layer"
+            :source="basemapLabelSource.source"
+            :before="firstOverlay"
+          />
+
+          <MglRasterLayer
+            v-for="(overlaySource, key) in overlaySources"
+            v-if="activeTiledOverlays.includes(key)"
+            :key="key"
+            :source-id="key"
+            :layer-id="key"
+            :layer="overlaySource.layer"
+            :source="overlaySource.source"
+            :before="cameraOverlay"
+          />
 
           <component
             v-for="comp in Object.keys(customMapComponent)"
             :is="customMapComponent[comp]"
-            :position="'topleft'"
+            @active-overlay-change="handleActiveOverlayChange"
           />
-          <!-- v-if="shouldShowHeader" -->
+          <!-- :position="'topleft'" -->
 
           <MglCircleMarker
             v-for="recording in cyclomediaRecordings"
@@ -207,13 +237,6 @@
             :opacity="0.5"
             @click="handleCyclomediaRecordingClick"
           />
-
-          <!-- <MbIcon
-            v-if="!fullScreenMapEnabled"
-            :url="'https://mapboard-images.s3.amazonaws.com/camera.png'"
-            :name="'camera'"
-            :rotation-angle="cycloRotationAngle"
-          /> -->
 
           <MglGeojsonLayer
             v-if="!fullScreenMapEnabled"
@@ -243,63 +266,12 @@
             @mouseout="handleVectorLayerMouseout"
           />
 
-          <!--
-          :source="$config.vectorTilesSources.streetsVectorSource"
-          :sourceId="'PVL_Original'"
-          :layer="this.$config.vectorTilesLayers.streetsVectorLayer"
-          :layerId="'PVL_Original'"
-          -->
-
-          <!-- <MglVectorLayer
-            :source="streetsVectorSource"
-            :sourceId="'PVL_Original'"
-            :layer="streetsVectorLayer"
-            :layerId="'PVL_Original'"
-          /> -->
-
-          <!-- <MglRasterLayer
-            v-for="(basemapSource, key) in this.basemapSources"
-            v-if="shouldShowRasterLayer && activeBasemap === key"
-            :sourceId="activeBasemap"
-            :layerId="activeBasemap"
-            :layer="basemapSource.layer"
-            :source="basemapSource.source"
-            :before="firstOverlay"
-          /> -->
-
-          <MglRasterLayer
-            v-for="(basemapLabelSource, key) in this.basemapLabelSources"
-            v-if="shouldShowRasterLayer && tiledLayers.includes(key)"
-            :sourceId="key"
-            :layerId="key"
-            :layer="basemapLabelSource.layer"
-            :source="basemapLabelSource.source"
-            :before="firstOverlay"
-          />
-
-          <MglRasterLayer
-            v-for="(overlaySource, key) in this.overlaySources"
-            v-if="shouldShowRasterLayer && activeTiledOverlays.includes(key)"
-            :sourceId="key"
-            :layerId="key"
-            :layer="overlaySource.layer"
-            :source="overlaySource.source"
-            :before="cameraOverlay"
-          />
-
-          <!-- <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
-                                   v-once
-                                   @half-marathon-button-clicked="this.halfMarathonButtonClicked"
-                                   @full-marathon-button-clicked="this.fullMarathonButtonClicked"
-                                   :position="'topright'"
-          /> -->
-
           <MglButtonControl
             v-if="shouldShowBasemapToggleControl"
             :buttonId="'buttonId-01'"
             :buttonClass="'right'"
             :imageLink="basemapImageLink"
-            @click="this.handleBasemapToggleClick"
+            @click="handleBasemapToggleClick"
           />
 
           <MglNavigationControl position="bottom-left"/>
@@ -376,7 +348,7 @@ import PhilaHeader from './PhilaHeader.vue';
 import PhilaButton from './PhilaButton.vue';
 // import PhilaFooter from './PhilaFooter.vue';
 
-import MarathonToggleControl from './MarathonToggleControl.vue';
+// import MarathonToggleControl from './MarathonToggleControl.vue';
 import LocationControl from '@phila/vue-mapping/src/components/LocationControl.vue';
 import BasemapToggleControl from '@phila/vue-mapping/src/components/BasemapToggleControl.vue';
 
@@ -389,7 +361,7 @@ export default {
     PhilaHeader,
     PhilaButton,
     // PhilaFooter,
-    MarathonToggleControl,
+    // MarathonToggleControl,
     Map_: () => import(/* webpackChunkName: "pvm_Map" */'@phila/vue-mapping/src/leaflet/Map.vue'),
     FullScreenToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenToggleTab" */'@phila/vue-mapping/src/components/FullScreenToggleTab.vue'),
     FullScreenMapToggleTab: () => import(/* webpackChunkName: "pvm_FullScreenMapToggleTab" */'@phila/vue-mapping/src/components/FullScreenMapToggleTab.vue'),
@@ -737,15 +709,15 @@ export default {
       // }
       // return this.hasImageryBasemaps;
     },
-    shouldShowMarathonToggleControl() {
-      let value;
-      if (this.$config.map.marathonToggle) {
-        value = this.$config.map.marathonToggle;
-      } else {
-        value = false;
-      }
-      return value;
-    },
+    // shouldShowMarathonToggleControl() {
+    //   let value;
+    //   if (this.$config.map.marathonToggle) {
+    //     value = this.$config.map.marathonToggle;
+    //   } else {
+    //     value = false;
+    //   }
+    //   return value;
+    // },
     shouldLoadCyclomediaWidget() {
       return this.$config.cyclomedia.enabled;
     },
@@ -874,10 +846,11 @@ export default {
       let map = this.$store.map;
       let overlaySources = Object.keys(this.$config.overlaySources);
       let overlay;
+      console.log('App.vue firstOverlay computed is running, map:', map);
       if (map) {
         // console.log('map.getStyle().layers:', map.getStyle().layers);
         let overlays = map.getStyle().layers.filter(function(layer) {
-          // console.log('layer.id:', layer.id, 'overlaySources:', overlaySources);
+          console.log('App.vue firstOverlay computed, layer.id:', layer.id, 'overlaySources:', overlaySources);
           return overlaySources.includes(layer.id);//[0].id;
         });
         if (overlays.length) {
@@ -893,7 +866,11 @@ export default {
     handleMapClick(e) {
       let map = this.$store.map;
       let features = map.queryRenderedFeatures(e.mapboxEvent.point);
-      console.log('handleMapClick is running e:', e, 'map:', map, 'features:', features);
+      // console.log('handleMapClick is running e:', e, 'map:', map, 'features:', features);
+    },
+    handleActiveOverlayChange(overlay) {
+      // console.log('handleActiveOverlayChange, overlay:', overlay);
+      this.activeTiledOverlays = [ overlay ];
     },
     handleVectorLayerMouseover(event) {
       let e = event.mapboxEvent;
@@ -1063,8 +1040,8 @@ export default {
       this.$controller.handleSearchFormSubmit(value);
     },
     handleMapMove(e) {
-      // console.log('handleMapMove is starting');
       const map = this.$store.map;
+      // console.log('handleMapMove is starting, map:', map, 'map.getBounds():', map.getBounds());
       if (!map) {
         return;
       }
