@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@fortawesome/vue-fontawesome": "^0.1.9",
-    "@phila/vue-datafetch": "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#a8cfb88e84bc475608fad9b28e19fc98c7e9c440",
-    "@phila/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#c93dca80423c99e73bbd78cf6d31899c10e0b966",
+    "@phila/vue-datafetch": "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#9aa892f89945587e7f30430d56873e581e8f3dfa",
+    "@phila/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#579d45a1d7b45f3e1460091a8b387dabf0ba88cd",
     "core-js": "^3.6.1",
     "vue": "^2.6.11",
     "vue-router": "^3.0.6",
@@ -27,7 +27,7 @@
     "node-sass": "^4.13.0",
     "sass": "^1.24.2",
     "sass-loader": "^7.1.0",
-    "vue-template-compiler": "2.6.10"
+    "vue-template-compiler": "^2.6.11"
   },
   "postcss": {
     "plugins": {

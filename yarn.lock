@@ -1017,9 +1017,9 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
-"@phila/vue-datafetch@https://github.com/CityOfPhiladelphia/phila-vue-datafetch#a8cfb88e84bc475608fad9b28e19fc98c7e9c440":
+"@phila/vue-datafetch@https://github.com/CityOfPhiladelphia/phila-vue-datafetch#9aa892f89945587e7f30430d56873e581e8f3dfa":
   version "1.2.2"
-  resolved "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#a8cfb88e84bc475608fad9b28e19fc98c7e9c440"
+  resolved "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#9aa892f89945587e7f30430d56873e581e8f3dfa"
   dependencies:
     "@turf/turf" "^5.1.6"
     airtable "^0.8.1"
@@ -1032,9 +1032,9 @@
     vue "^2.6.11"
     vuex "^3.5.1"
 
-"@phila/vue-mapping@https://github.com/CityOfPhiladelphia/phila-vue-mapping#c93dca80423c99e73bbd78cf6d31899c10e0b966":
+"@phila/vue-mapping@https://github.com/CityOfPhiladelphia/phila-vue-mapping#579d45a1d7b45f3e1460091a8b387dabf0ba88cd":
   version "2.1.11"
-  resolved "https://github.com/CityOfPhiladelphia/phila-vue-mapping#c93dca80423c99e73bbd78cf6d31899c10e0b966"
+  resolved "https://github.com/CityOfPhiladelphia/phila-vue-mapping#579d45a1d7b45f3e1460091a8b387dabf0ba88cd"
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^1.2.15"
     "@fortawesome/free-regular-svg-icons" "^5.7.2"
@@ -10372,10 +10372,10 @@ vue-style-loader@^4.1.0, vue-style-loader@^4.1.2:
     hash-sum "^1.0.2"
     loader-utils "^1.0.2"
 
-vue-template-compiler@2.6.10:
-  version "2.6.10"
-  resolved "https://registry.yarnpkg.com/vue-template-compiler/-/vue-template-compiler-2.6.10.tgz#323b4f3495f04faa3503337a82f5d6507799c9cc"
-  integrity sha512-jVZkw4/I/HT5ZMvRnhv78okGusqe0+qH2A0Em0Cp8aq78+NK9TII263CDVz2QXZsIT+yyV/gZc/j/vlwa+Epyg==
+vue-template-compiler@^2.6.11:
+  version "2.6.11"
+  resolved "https://registry.yarnpkg.com/vue-template-compiler/-/vue-template-compiler-2.6.11.tgz#c04704ef8f498b153130018993e56309d4698080"
+  integrity sha512-KIq15bvQDrcCjpGjrAhx4mUlyyHfdmTaoNfeoATHLAiWB+MU3cx4lOzMwrnUh9cCxy0Lt1T11hAFY6TQgroUAA==
   dependencies:
     de-indent "^1.0.2"
     he "^1.1.0"
