@@ -15,7 +15,7 @@ import router from './router';
 import App from './components/App.vue';
 
 // import 'phila-standards/dist/css/phila-app.min.css';
-import 'leaflet/dist/leaflet.css';
+// import 'leaflet/dist/leaflet.css';
 
 
 // const baseConfigUrl = null;
