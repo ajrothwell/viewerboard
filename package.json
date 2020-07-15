@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@fortawesome/vue-fontawesome": "^0.1.9",
-    "@phila/vue-datafetch": "1.2.1",
+    "@phila/vue-datafetch": "1.2.2",
     "@phila/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#e4b686016c8f9a3cf350ed1ef0537fe5a766ba9e",
     "core-js": "^3.6.1",
     "vue": "2.6.10",
