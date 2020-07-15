@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@fortawesome/vue-fontawesome": "^0.1.9",
-    "@phila/vue-datafetch": "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#9aa892f89945587e7f30430d56873e581e8f3dfa",
+    "@phila/vue-datafetch": "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#1c3b46c41020b7180b62932091656b41d3a80513",
     "@phila/vue-mapping": "https://github.com/CityOfPhiladelphia/phila-vue-mapping#579d45a1d7b45f3e1460091a8b387dabf0ba88cd",
     "core-js": "^3.6.1",
     "vue": "^2.6.11",
