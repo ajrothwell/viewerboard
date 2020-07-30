@@ -34,143 +34,6 @@
         id="map-panel"
         :class="mapPanelClass"
       >
-      <!-- :style="{ 'position': 'relative' }" -->
-
-        <!-- <full-screen-toggle-tab
-          :event="'toggle-tab-click'"
-          :deactivated-direction="'right'"
-          @toggle-tab-click="mapToggleClicked"
-        /> -->
-
-        <!-- <map_
-          v-if="this.mapType === 'leaflet'"
-          id="map-tag"
-          :center="this.$store.state.map.center"
-          :zoom="this.$store.state.map.zoom"
-          attribution-position="bottomleft"
-          zoom-control-position="bottomleft"
-          :min-zoom="this.$config.map.minZoom"
-          :max-zoom="this.$config.map.maxZoom"
-          @l-moveend="handleMapMove"
-        > -->
-
-          <!-- basemaps -->
-          <!-- <esri-tiled-map-layer
-            v-for="(basemap, key) in this.$config.map.basemaps"
-            v-if="activeBasemap === key"
-            :key="key"
-            :url="basemap.url"
-            :max-zoom="basemap.maxZoom"
-            :attribution="basemap.attribution"
-          /> -->
-
-          <!-- basemap labels and parcels outlines -->
-          <!-- <esri-tiled-map-layer
-            v-for="(tiledLayer, key) in this.$config.map.tiledLayers"
-            v-if="tiledLayers.includes(key)"
-            :key="key"
-            :url="tiledLayer.url"
-            :z-index="tiledLayer.zIndex"
-            :attribution="tiledLayer.attribution"
-          /> -->
-
-          <!-- tiled overlay based on topic -->
-          <!-- <esri-tiled-map-layer
-            v-for="(tiledLayer, key) in this.$config.map.tiledLayers"
-            v-if="activeTiledOverlays.includes(key)"
-            :key="key"
-            :url="tiledLayer.url"
-            :z-index="tiledLayer.zIndex"
-            :opacity="tiledLayer.opacity"
-            :test="key"
-          /> -->
-
-          <!-- <vector-marker
-            v-for="marker in markersForAddress"
-            :key="marker.key"
-            :latlng="marker.latlng"
-            :marker-color="marker.color"
-            :icon="marker.icon"
-            :interactive="false"
-          /> -->
-
-          <!-- <control-corner
-            :v-side="'almostbottom'"
-            :h-side="'left'"
-          /> -->
-
-          <!-- <div v-once> -->
-            <!-- <location-control
-              v-if="geolocationEnabled"
-              v-show="!fullScreenImageryEnabled"
-              :position="'bottomleft'"
-              :title="'Locate me'"
-            /> -->
-            <!-- v-once
-          </div> -->
-
-          <!-- location marker -->
-          <!-- <circle-marker
-            v-if="this.$store.state.map.location.lat != null"
-            :key="Math.random()"
-            :latlng="locationMarker.latlng"
-            :radius="locationMarker.radius"
-            :fill-color="locationMarker.fillColor"
-            :color="locationMarker.color"
-            :weight="locationMarker.weight"
-            :opacity="locationMarker.opacity"
-            :fill-opacity="locationMarker.fillOpacity"
-          /> -->
-
-          <!-- <cyclomedia-recording-circle
-            v-for="recording in cyclomediaRecordings"
-            v-if="!fullScreenMapEnabled"
-            :key="recording.imageId"
-            :image-id="recording.imageId"
-            :latlng="[recording.lat, recording.lng]"
-            :size="1.2"
-            :color="'#3388ff'"
-            :weight="1"
-            @l-click="handleCyclomediaRecordingClick"
-          /> -->
-
-          <!-- marker using a png and ablility to rotate it -->
-          <!-- v-if="cyclomediaActive" -->
-          <!-- <png-marker
-            v-if="!fullScreenMapEnabled && this.$config.cyclomedia.enabled"
-            :icon="sitePath + 'images/camera.png'"
-            :latlng="cycloLatlng"
-            :rotation-angle="cycloRotationAngle"
-          /> -->
-
-          <!-- marker using custom code extending icons - https://github.com/iatkin/leaflet-svgicon -->
-          <!-- v-if="cyclomediaActive" -->
-          <!-- <svg-view-cone-marker
-            v-if="!fullScreenMapEnabled"
-            :latlng="cycloLatlng"
-            :rotation-angle="cycloRotationAngle"
-            :h-fov="cycloHFov"
-          /> -->
-
-          <!-- <div v-once>
-            <marathon-toggle-control v-if="shouldShowMarathonToggleControl"
-                                     v-once
-                                     @half-marathon-button-clicked="this.halfMarathonButtonClicked"
-                                     @full-marathon-button-clicked="this.fullMarathonButtonClicked"
-                                     :position="'topright'"
-            />
-          </div> -->
-
-          <!-- <div v-once>
-            <basemap-toggle-control v-if="shouldShowBasemapToggleControl"
-                                    v-once
-                                    @basemap-toggle-clicked="handleBasemapToggleClick"
-                                    :position="'topright'"
-                                    :single-layer="'imagery2019'"
-            />
-          </div>
-
-        </map_> -->
 
         <MglMap
           v-if="shouldShowMglMap && mapType === 'mapbox'"
@@ -408,7 +271,7 @@ export default {
       tiledLayers: ['cityBasemapLabels'],
       activeTiledOverlays: [],
       // shouldShowMglMap: false,
-
+      watchedZoom: null,
       geojsonCameraSource: {
         'type': 'geojson',
         'data': {
@@ -448,7 +311,7 @@ export default {
         'layout': {},
         'paint': {
           'fill-color': 'rgb(0,102,255)',
-          'fill-opacity': 0.5
+          'fill-opacity': 0.2,
         }
       },
 
@@ -562,6 +425,15 @@ export default {
     //     console.log('watchComputedMapStyle is firing');
     //   });
     // },
+    watchedZoom(nextWatchedZoom) {
+      if (this.cyclomediaActive) {
+        this.handleCycloChanges();
+      }
+      let map = this.$store.map;
+      if (map) {
+        this.$store.map.setZoom(nextWatchedZoom);
+      }
+    },
     mapPanelClass() {
       let themap = this.$store.map;
       if (themap && this.$config.map.type && this.$config.map.type === 'mapbox') {
@@ -576,6 +448,7 @@ export default {
     geocodeCoordinates(nextGeocodeCoordinates) {
       this.$store.commit('setCyclomediaLatLngFromMap', [this.$store.state.geocode.data.geometry.coordinates[1], this.$store.state.geocode.data.geometry.coordinates[0]]);
       this.$store.commit('setMapCenter', nextGeocodeCoordinates);
+      this.$store.map.setCenter(nextGeocodeCoordinates);
     },
     cycloLatlng(nextCycloLatlng) {
       // console.log('watch cycloLatlng, nextCycloLatlng:', nextCycloLatlng, 'this.$data.geojsonCameraSource:', this.$data.geojsonCameraSource);
@@ -936,8 +809,35 @@ export default {
       let angle2 = this.cycloRotationAngle + halfAngle;
       // console.log('handleCycloChanges, halfAngle:', halfAngle, 'angle1:', angle1, 'this.cycloRotationAngle:', this.cycloRotationAngle, 'angle2:', angle2);
 
-      var distance = 1300;
-      var options = {units: 'feet'};
+      let distance;
+      if (this.$data.watchedZoom < 9) {
+        distance = 2000 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 10) {
+        distance = 1000 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 11) {
+        distance = 670 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 12) {
+        distance = 420 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 13) {
+        distance = 270 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 14) {
+        distance = 150 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 15) {
+        distance = 100 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 16) {
+        distance = 55 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 17) {
+        distance = 30 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 18) {
+        distance = 25 * (21 - this.$data.watchedZoom);
+      } else if (this.$data.watchedZoom < 20.4) {
+        distance = 15 * (21 - this.$data.watchedZoom);
+      } else {
+        distance = 10;
+      }
+
+      console.log('handleCycloChanges is running, this.$data.watchedZoom:', this.$data.watchedZoom, 'distance:', distance);
+      let options = {units: 'feet'};
 
       if (!this.cycloLatlng) {
         return;
@@ -1061,11 +961,12 @@ export default {
       const pictometryConfig = this.$config.pictometry || {};
       const cyclomediaConfig = this.$config.cyclomedia || {};
 
+      const zoom = map.getZoom();
+      this.$data.watchedZoom = zoom;
+
       if (pictometryConfig.enabled) {
         // update state for pictometry
         this.$store.commit('setPictometryMapCenter', coords);
-
-        const zoom = map.getZoom();
         this.$store.commit('setPictometryMapZoom', zoom);
       }
 
