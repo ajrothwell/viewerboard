@@ -11,6 +11,10 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.6 - 7/30/2020
+
+* changes size of camera icon
+
 ### 0.1.5 - 7/30/2020
 
 * uses @phila/vue-mapping 2.1.18

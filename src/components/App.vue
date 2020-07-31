@@ -288,7 +288,7 @@ export default {
         'source': 'cameraPoint',
         'layout': {
           'icon-image': 'cameraMarker',
-          'icon-size': 0.13,
+          'icon-size': 0.09,
           'icon-rotate': 0,
           'icon-rotation-alignment': 'map',
         }
