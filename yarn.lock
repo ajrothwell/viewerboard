@@ -1018,9 +1018,9 @@
   resolved "https://registry.yarnpkg.com/@nodelib/fs.stat/-/fs.stat-1.1.3.tgz#2b5a3ab3f918cca48a8c754c08168e3f03eba61b"
   integrity sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw==
 
-"@phila/vue-datafetch@https://github.com/CityOfPhiladelphia/phila-vue-datafetch#cb2190f5f50d00dabbc2276df30e9d18809a986c":
+"@phila/vue-datafetch@https://github.com/CityOfPhiladelphia/phila-vue-datafetch#91f39ddc9e9461db6fb766dc6c8da6c328eb798a":
   version "1.2.2"
-  resolved "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#cb2190f5f50d00dabbc2276df30e9d18809a986c"
+  resolved "https://github.com/CityOfPhiladelphia/phila-vue-datafetch#91f39ddc9e9461db6fb766dc6c8da6c328eb798a"
   dependencies:
     "@turf/turf" "^5.1.6"
     airtable "^0.8.1"
