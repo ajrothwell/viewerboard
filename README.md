@@ -11,6 +11,10 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.7 - 10/6/2020
+
+* fixes issues with routing from url
+
 ### 0.1.6 - 7/30/2020
 
 * changes size of camera icon

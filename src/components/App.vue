@@ -35,12 +35,13 @@
         :class="mapPanelClass"
       >
 
+      <!-- :center="$config.map.center" -->
         <MglMap
           v-if="shouldShowMglMap && mapType === 'mapbox'"
           :accessToken="accessToken"
           :mapStyle.sync="computedMapStyle"
           :zoom="$config.map.zoom"
-          :center="$config.map.center"
+          :center="mapCenter"
           @moveend="handleMapMove"
           @load="onMapLoaded"
           @preload="onMapPreloaded"
@@ -359,6 +360,14 @@ export default {
       }
     }
     window.addEventListener('resize', this.handleWindowResize);
+    if (this.$route.query.address) {
+      this.$controller.handleSearchFormSubmit(this.$route.query.address);
+    } else if (this.$route.query.lat) {
+      // console.log('viewerboard app mounted route has lat');
+      this.$store.commit('setMapCenter', [parseFloat(this.$route.query.lng), parseFloat(this.$route.query.lat)]);
+      this.$store.commit('setCyclomediaLatLngFromMap', [parseFloat(this.$route.query.lat), parseFloat(this.$route.query.lng)]);
+      this.$store.commit('setCyclomediaXyz', [parseFloat(this.$route.query.lng), parseFloat(this.$route.query.lat)]);
+    }
   },
   mounted() {
     if (this.$config.dataSources) {
@@ -367,7 +376,7 @@ export default {
     if (this.$config.initialTiledOverlays) {
       this.activeTiledOverlays = this.$config.initialTiledOverlays;
     }
-    if (this.$config.map.center) {
+    if (this.$config.map.center && !this.$route.query.lat) {
       this.$store.commit('setMapCenter', this.$config.map.center);
     }
     // if (this.$config.map.zoom && this.$store.map) {
@@ -376,12 +385,13 @@ export default {
     }
     console.log('viewerboard app mounted, this.$config:', this.$config, 'this.$config.initialView.length:', this.$config.initialView.length);
     this.handleWindowResize();
-    if (this.$route.query.address) {
-      this.$controller.handleSearchFormSubmit(this.$route.query.address);
-    } else if (this.$route.query.lat) {
-      // console.log('viewerboard app mounted route has lat');
-      this.$store.commit('setCyclomediaLatLngFromMap', [parseFloat(this.$route.query.lat), parseFloat(this.$route.query.lng)]);
-    }
+    // if (this.$route.query.address) {
+    //   this.$controller.handleSearchFormSubmit(this.$route.query.address);
+    // } else if (this.$route.query.lat) {
+    //   console.log('viewerboard app mounted route has lat');
+    //   // this.$store.commit('setCyclomediaLatLngFromMap', [parseFloat(this.$route.query.lat), parseFloat(this.$route.query.lng)]);
+    //   this.$store.commit('setCyclomediaXyz', [parseFloat(this.$route.query.lng), parseFloat(this.$route.query.lat)]);
+    // }
 
     this.$store.commit('setPictometryMapCenter', this.$config.map.center);
     // this.handleMapMove();
@@ -425,6 +435,12 @@ export default {
     //     console.log('watchComputedMapStyle is firing');
     //   });
     // },
+    fullScreenImageryEnabled(nextFullScreenImageryEnabled) {
+      // console.log('watch fullScreenImageryEnabled is running');
+      if (nextFullScreenImageryEnabled === false) {
+        this.$store.map.setCenter([this.cycloLatlng[1], this.cycloLatlng[0]]);
+      }
+    },
     watchedZoom(nextWatchedZoom) {
       if (this.cyclomediaActive) {
         this.handleCycloChanges();
@@ -446,9 +462,14 @@ export default {
       }
     },
     geocodeCoordinates(nextGeocodeCoordinates) {
+      // console.log('watch geocodeCoordinates is running, nextGeocodeCoordinates:', nextGeocodeCoordinates);
       this.$store.commit('setCyclomediaLatLngFromMap', [this.$store.state.geocode.data.geometry.coordinates[1], this.$store.state.geocode.data.geometry.coordinates[0]]);
+      this.$store.commit('setCyclomediaXyz', [this.$store.state.geocode.data.geometry.coordinates[0], this.$store.state.geocode.data.geometry.coordinates[1]]);
       this.$store.commit('setMapCenter', nextGeocodeCoordinates);
-      this.$store.map.setCenter(nextGeocodeCoordinates);
+      if (this.$store.map) {
+        // console.log('watch geocodeCoordinates if this.$store.map is true');
+        this.$store.map.setCenter(nextGeocodeCoordinates);
+      }
     },
     cycloLatlng(nextCycloLatlng) {
       // console.log('watch cycloLatlng, nextCycloLatlng:', nextCycloLatlng, 'this.$data.geojsonCameraSource:', this.$data.geojsonCameraSource);
@@ -467,6 +488,9 @@ export default {
     },
   },
   computed: {
+    mapCenter() {
+      return this.$store.state.map.center;
+    },
     sources() {
       return this.$store.state.sources;
     },
@@ -860,6 +884,9 @@ export default {
     onMapLoaded(event) {
       // this.$store.commit('setMap', map);
       this.$store.map = event.map;
+      if (this.$store.state.geocode.status === 'success') {
+        this.$store.map.setCenter([this.geocodeCoordinates[0], this.geocodeCoordinates[1]]);
+      }
     },
     onMapPreloaded(event) {
       let logo = document.getElementsByClassName('mapboxgl-ctrl-logo');
@@ -973,7 +1000,7 @@ export default {
       if (cyclomediaConfig.enabled) {
         // update cyclo recordings
         this.updateCyclomediaRecordings();
-        this.$store.commit('setCyclomediaLatLngFromMap', [ lat, lng ]);
+        // this.$store.commit('setCyclomediaLatLngFromMap', [ lat, lng ]);
       }
     },
     handleWindowResize() {
