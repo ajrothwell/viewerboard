@@ -11,6 +11,10 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.8 - 10/6/2020
+
+* uses updated phila-vue packages
+
 ### 0.1.7 - 10/6/2020
 
 * fixes issues with routing from url
