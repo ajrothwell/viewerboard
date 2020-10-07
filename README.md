@@ -11,6 +11,12 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.9 - 10/7/2020
+
+* uses upgraded vue libraries:
+    * @phila/vue-mapping 2.2.9
+    * @phila/vue-datafetch 1.4.3
+
 ### 0.1.8 - 10/6/2020
 
 * uses updated phila-vue packages
