@@ -11,6 +11,10 @@ It is similar to [mapboard](https://github.com/CityOfPhiladelphia/mapboard), but
 
 ## Release Notes
 
+### 0.1.10 - 10/26/2020
+
+* fixes bug with pictometry
+
 ### 0.1.9 - 10/7/2020
 
 * uses upgraded vue libraries:

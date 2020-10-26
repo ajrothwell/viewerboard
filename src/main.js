@@ -9,22 +9,17 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 import controllerMixin from '@phila/vue-datafetch/src/controller.js';
 
-// import eventBusMixin from './util/event-bus-mixin';
-// import CyclomediaWidget from '@phila/vue-mapping/src/cyclomedia/Widget.vue';
-import router from './router';
+import Router from 'vue-router';
 import App from './components/App.vue';
 
-// import 'phila-standards/dist/css/phila-app.min.css';
-// import 'leaflet/dist/leaflet.css';
-
-
-// const baseConfigUrl = null;
 let baseConfigUrl;
 if (process.env.VUE_APP_BASE_CONFIG_URL) {
   baseConfigUrl = process.env.VUE_APP_BASE_CONFIG_URL;
 }
 
 function initVue(config) {
+
+  config.router.pattern = 'address-and-topic';
   // const baseConfigUrl = clientConfig.baseConfig;
   // make config accessible from each component via this.$config
   Vue.use(configMixin, config);
@@ -37,6 +32,17 @@ function initVue(config) {
 
   // create store
   const store = createStore(config);
+
+  Vue.use(Router);
+  let router = new Router({
+    mode: 'history',
+    routes: [
+      {
+        path: '/:address',
+        name: 'address-only',
+      },
+    ],
+  });
 
   Vue.use(controllerMixin, { config, store, router });
 
